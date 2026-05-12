@@ -1,0 +1,202 @@
+/* src/index.css */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Estilos globales LLEP RESTAURANT POS
+   - Tailwind CSS v4 (importación unificada)
+   - Variables de diseño (colores, fuentes)
+   - Estilos de scroll, animaciones y utilidades
+   - @media print para tickets térmicos 58mm / 80mm
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Variables de diseño ─────────────────────────────────────────────────── */
+:root {
+  --bg-primary:    #0f172a;
+  --bg-secondary:  #1e293b;
+  --bg-card:       #1e293b;
+  --bg-elevated:   #334155;
+  --accent:        #f59e0b;
+  --accent-light:  #fbbf24;
+  --accent-dark:   #d97706;
+  --success:       #10b981;
+  --danger:        #ef4444;
+  --warning:       #f59e0b;
+  --text-primary:  #f8fafc;
+  --text-secondary:#94a3b8;
+  --border:        #334155;
+}
+
+/* ── Reset y base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar personalizada ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dark); }
+
+/* ── Animaciones ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 10px rgba(245,158,11,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+}
+
+.animate-fadeIn   { animation: fadeIn  0.3s ease forwards; }
+.animate-slideUp  { animation: slideUp 0.4s ease forwards; }
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }
+
+/* ── Glassmorphism ───────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Utilidades POS ──────────────────────────────────────────────────────── */
+.pos-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.pos-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+.badge-open   { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+.badge-closed { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+
+/* ── Botones de acción ───────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #0f172a;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  transition: opacity 0.2s, transform 0.15s;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary:hover  { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  transition: border-color 0.2s, color 0.2s;
+  cursor: pointer;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+/* ── Input global ────────────────────────────────────────────────────────── */
+.pos-input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 0.6rem 0.9rem;
+  width: 100%;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.pos-input:focus { border-color: var(--accent); }
+.pos-input::placeholder { color: var(--text-secondary); }
+
+/* ── Modal overlay ───────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   @media print — Ticket térmico optimizado para 58mm y 80mm
+   ════════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Ocultar TODA la UI excepto el ticket */
+  body > *:not(#ticket-print-root) { display: none !important; }
+
+  @page {
+    margin: 0;
+    /* Ancho 58mm — cambia a 80mm si usas impresora de 80mm */
+    size: 58mm auto;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #ticket-print-root {
+    display: block !important;
+    width: 54mm;
+    margin: 0 auto;
+    padding: 2mm;
+  }
+
+  .ticket-divider {
+    border-top: 1px dashed #000;
+    margin: 3px 0;
+  }
+
+  .ticket-header { text-align: center; margin-bottom: 4px; }
+  .ticket-header h1 { font-size: 13px; font-weight: bold; }
+  .ticket-header p  { font-size: 9px; }
+
+  .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+  .ticket-item-name { flex: 1; }
+  .ticket-item-price { white-space: nowrap; margin-left: 4px; }
+
+  .ticket-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 4px;
+  }
+
+  .ticket-footer { text-align: center; margin-top: 6px; font-size: 9px; }
+}
