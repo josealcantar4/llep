@@ -77,7 +77,7 @@ export default function OrderPage() {
     setMobileTab('cart');
 
     try {
-      await updateDoc(doc(db, 'tables', tableId), { items: updated });
+      await updateDoc(doc(db, 'tables', tableId), { items: updated, status: 'open' });
       toast.success(`${selectedItem.name} agregado`);
     } catch (e) {
       toast.error('Error al guardar');
@@ -92,7 +92,7 @@ export default function OrderPage() {
     setMobileTab('cart');
 
     try {
-      await updateDoc(doc(db, 'tables', tableId), { items: updated });
+      await updateDoc(doc(db, 'tables', tableId), { items: updated, status: 'open' });
       toast.success(`"${freeItem.name}" agregado`);
     } catch (e) {
       toast.error('Error al guardar');

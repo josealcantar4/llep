@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart3, UtensilsCrossed, MinusCircle,
-  Scissors, Home, LogOut, Menu as MenuIcon, X,
+  Scissors, Home, LogOut, Menu as MenuIcon, X, UserPlus,
 } from 'lucide-react';
 import { logout } from '../../firebase/auth.js';
 import useAuthStore from '../../store/useAuthStore.js';
@@ -14,6 +14,7 @@ import useAuthStore from '../../store/useAuthStore.js';
 const NAV_ITEMS = [
   { to: '/admin',          label: 'Dashboard',   Icon: BarChart3,      end: true },
   { to: '/admin/menu',     label: 'Menú',        Icon: UtensilsCrossed },
+  { to: '/admin/users',    label: 'Usuarios',    Icon: UserPlus },
   { to: '/admin/expenses', label: 'Egresos',     Icon: MinusCircle },
   { to: '/admin/shift',    label: 'Corte de Caja', Icon: Scissors },
 ];
@@ -83,7 +84,7 @@ export default function AdminLayout() {
           <LogOut size={17} /> Cerrar sesión
         </button>
         <p className="text-xs px-4 pt-2" style={{ color: 'var(--text-secondary)' }}>
-          {user?.name ?? user?.email}
+          {user?.displayName ?? user?.name ?? user?.email}
         </p>
       </div>
     </div>

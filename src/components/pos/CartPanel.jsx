@@ -30,7 +30,7 @@ export default function CartPanel({ tableId, items, setItems }) {
       .map((it) => it.id === id ? { ...it, qty: it.qty + delta } : it)
       .filter((it) => it.qty > 0);
     setItems(updated);
-    try { await updateDoc(doc(db, 'tables', tableId), { items: updated }); }
+    try { await updateDoc(doc(db, 'tables', tableId), { items: updated, status: updated.length > 0 ? 'open' : 'available' }); }
     catch { toast.error('Error al actualizar'); }
   };
 
@@ -38,7 +38,7 @@ export default function CartPanel({ tableId, items, setItems }) {
   const removeItem = async (id) => {
     const updated = items.filter((it) => it.id !== id);
     setItems(updated);
-    try { await updateDoc(doc(db, 'tables', tableId), { items: updated }); }
+    try { await updateDoc(doc(db, 'tables', tableId), { items: updated, status: updated.length > 0 ? 'open' : 'available' }); }
     catch { toast.error('Error al eliminar'); }
   };
 
@@ -46,7 +46,7 @@ export default function CartPanel({ tableId, items, setItems }) {
   const clearCart = async () => {
     if (!window.confirm('¿Vaciar toda la cuenta?')) return;
     setItems([]);
-    try { await updateDoc(doc(db, 'tables', tableId), { items: [] }); }
+    try { await updateDoc(doc(db, 'tables', tableId), { items: [], status: 'available' }); }
     catch { toast.error('Error al limpiar'); }
   };
 

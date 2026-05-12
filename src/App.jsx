@@ -16,6 +16,7 @@ import CheckoutPage    from './pages/CheckoutPage.jsx';
 import AdminLayout     from './pages/admin/AdminLayout.jsx';
 import DashboardPage   from './pages/admin/DashboardPage.jsx';
 import MenuAdminPage   from './pages/admin/MenuAdminPage.jsx';
+import UsersAdminPage  from './pages/admin/UsersAdminPage.jsx';
 import ExpensesPage    from './pages/admin/ExpensesPage.jsx';
 import ShiftClosePage  from './pages/admin/ShiftClosePage.jsx';
 
@@ -51,9 +52,10 @@ export default function App() {
         {/* ── Admin ────────────────────────────────────────────── */}
         <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
           <Route index element={<DashboardPage />} />
-          <Route path="menu"    element={<MenuAdminPage />} />
+          <Route path="menu"     element={<MenuAdminPage />} />
+          <Route path="users"    element={<UsersAdminPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
-          <Route path="shift"   element={<ShiftClosePage />} />
+          <Route path="shift"    element={<ShiftClosePage />} />
         </Route>
 
         {/* ── Fallback ─────────────────────────────────────────── */}

@@ -4,6 +4,7 @@
 // Las credenciales se cargan desde variables de entorno (.env).
 // ─────────────────────────────────────────────────────────────────────────────
 import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
 import {
   getFirestore,
   initializeFirestore,
@@ -19,10 +20,12 @@ const firebaseConfig = {
   storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Inicializar Firebase App
+// Inicializar Firebase App y Analytics
 const app = initializeApp(firebaseConfig);
+export const analytics = getAnalytics(app);
 
 // Inicializar Firestore con caché persistente (offline-first)
 // persistentMultipleTabManager permite usar la app en múltiples pestañas

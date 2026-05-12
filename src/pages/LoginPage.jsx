@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { user, loading } = useAuthStore();
   const navigate = useNavigate();
 
-  const [email,    setEmail]    = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [busy,     setBusy]     = useState(false);
 
@@ -25,10 +25,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return toast.error('Completa todos los campos');
+    if (!usernameInput || !password) return toast.error('Completa todos los campos');
     setBusy(true);
     try {
-      await loginWithEmail(email, password);
+      const finalEmail = usernameInput.includes('@') ? usernameInput : `${usernameInput}@llep.pos`;
+      await loginWithEmail(finalEmail, password);
       navigate('/', { replace: true });
     } catch (err) {
       console.error(err);
@@ -73,19 +74,19 @@ export default function LoginPage() {
           {/* Email */}
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Correo electrónico
+              Usuario o Correo
             </label>
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2"
                     style={{ color: 'var(--text-secondary)' }} />
               <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@llep.com"
+                id="login-username"
+                type="text"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value.toLowerCase())}
+                placeholder="juan_ventas"
                 className="pos-input pl-9"
-                autoComplete="email"
+                autoComplete="username"
                 required
               />
             </div>

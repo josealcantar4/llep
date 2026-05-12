@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState } from 'react';
 import { where, orderBy, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { MinusCircle, PlusCircle, Calendar, DollarSign, FileText } from 'lucide-react';
+import { MinusCircle, PlusCircle, Calendar, DollarSign, FileText, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../../firebase/config.js';
 import useAuthStore from '../../store/useAuthStore.js';
@@ -15,6 +15,8 @@ const today = new Date().toISOString().split('T')[0];
 
 export default function ExpensesPage() {
   const { user } = useAuthStore();
+  const [showForm, setShowForm] = useState(false);
+
   const [amount,  setAmount]  = useState('');
   const [concept, setConcept] = useState('');
   const [date,    setDate]    = useState(today);
@@ -41,13 +43,14 @@ export default function ExpensesPage() {
         date,
         shift:        today,
         registeredBy: user.uid,
-        registeredByName: user.name ?? user.email,
+        registeredByName: user.displayName ?? user.name ?? user.email,
         createdAt:    serverTimestamp(),
       });
       toast.success('Egreso registrado');
       setAmount('');
       setConcept('');
       setDate(today);
+      setShowForm(false);
     } catch (err) {
       console.error(err);
       toast.error('Error al guardar el egreso');
@@ -57,27 +60,38 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <div>
-        <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
-          Registro de Egresos
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-          Salidas de dinero de la caja del día
-        </p>
+    <div className="space-y-6 animate-fadeIn max-w-4xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
+            Registro de Egresos
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            Salidas de dinero de la caja del día
+          </p>
+        </div>
+        {!showForm && (
+          <button onClick={() => setShowForm(true)} className="btn-primary text-sm flex items-center gap-2">
+            <PlusCircle size={16} />
+            Nuevo Egreso
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {showForm ? (
+        /* ── Formulario ────────────────────────────────────────────────── */
+        <div className="pos-card p-6 animate-slideUp max-w-xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <PlusCircle size={20} color="var(--accent)" />
+              Registrar Nuevo Egreso
+            </h2>
+            <button onClick={() => setShowForm(false)} className="btn-ghost flex items-center gap-2 text-sm px-3 py-1.5">
+              <ArrowLeft size={16} /> Volver
+            </button>
+          </div>
 
-        {/* ── Formulario ────────────────────────────────────────────────── */}
-        <div className="pos-card p-5">
-          <h2 className="font-bold text-sm mb-4 flex items-center gap-2"
-              style={{ color: 'var(--text-primary)' }}>
-            <PlusCircle size={16} color="var(--accent)" />
-            Nuevo Egreso
-          </h2>
-          <form onSubmit={handleSave} className="space-y-4">
-
+          <form onSubmit={handleSave} className="space-y-5">
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5"
                      style={{ color: 'var(--text-secondary)' }}>
@@ -88,7 +102,7 @@ export default function ExpensesPage() {
                       style={{ color: 'var(--text-secondary)' }}>$</span>
                 <input
                   id="expense-amount"
-                  className="pos-input pl-7"
+                  className="pos-input pl-7 text-lg font-bold"
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -96,6 +110,7 @@ export default function ExpensesPage() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required
+                  autoFocus
                 />
               </div>
             </div>
@@ -130,32 +145,33 @@ export default function ExpensesPage() {
               />
             </div>
 
-            <button
-              id="btn-save-expense"
-              type="submit"
-              disabled={saving}
-              className="btn-primary w-full py-3 flex items-center justify-center gap-2 text-sm"
-            >
-              {saving ? <LoadingSpinner size="sm" /> : <PlusCircle size={16} />}
-              Registrar Egreso
-            </button>
+            <div className="pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+              <button
+                id="btn-save-expense"
+                type="submit"
+                disabled={saving}
+                className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-sm"
+              >
+                {saving ? <LoadingSpinner size="sm" /> : <PlusCircle size={16} />}
+                Guardar Egreso
+              </button>
+            </div>
           </form>
         </div>
-
-        {/* ── Lista de egresos del día ──────────────────────────────────── */}
-        <div className="pos-card p-5 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm flex items-center gap-2"
-                style={{ color: 'var(--text-primary)' }}>
+      ) : (
+        /* ── Lista de egresos del día ──────────────────────────────────── */
+        <div className="pos-card p-0 overflow-hidden animate-fadeIn">
+          <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+            <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
               <MinusCircle size={16} color="#ef4444" />
-              Egresos de hoy
+              Egresos de Hoy ({today})
             </h2>
             {expenses.length > 0 && (
               <div className="text-right">
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Total</p>
-                <p className="font-black text-lg" style={{ color: '#ef4444' }}>
+                <span className="text-xs mr-2" style={{ color: 'var(--text-secondary)' }}>Total Salidas:</span>
+                <span className="font-black text-lg" style={{ color: '#ef4444' }}>
                   -${totalExpenses.toFixed(2)}
-                </p>
+                </span>
               </div>
             )}
           </div>
@@ -165,40 +181,52 @@ export default function ExpensesPage() {
               <LoadingSpinner />
             </div>
           ) : expenses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center flex-1 py-10 gap-2">
-              <MinusCircle size={32} color="var(--text-secondary)" />
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <MinusCircle size={40} color="var(--border)" />
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Sin egresos registrados hoy
+                No se han registrado salidas de dinero hoy.
               </p>
+              <button onClick={() => setShowForm(true)} className="btn-ghost mt-2 text-xs">
+                Registrar primer egreso
+              </button>
             </div>
           ) : (
-            <div className="space-y-2 overflow-y-auto">
-              {expenses.map((exp) => {
-                const date = exp.createdAt?.toDate?.() ?? new Date();
-                return (
-                  <div key={exp.id}
-                       className="flex items-start justify-between p-3 rounded-xl"
-                       style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate"
-                         style={{ color: 'var(--text-primary)' }}>
-                        {exp.concept}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                        {date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                        {' · '}{exp.registeredByName}
-                      </p>
-                    </div>
-                    <span className="font-bold ml-3 flex-shrink-0" style={{ color: '#ef4444' }}>
-                      -${exp.amount.toFixed(2)}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead style={{ background: 'rgba(255,255,255,0.02)' }}>
+                  <tr style={{ color: 'var(--text-secondary)' }}>
+                    <th className="px-5 py-3 font-medium">Hora</th>
+                    <th className="px-5 py-3 font-medium">Concepto</th>
+                    <th className="px-5 py-3 font-medium">Registrado Por</th>
+                    <th className="px-5 py-3 font-medium text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map((exp) => {
+                    const d = exp.createdAt?.toDate?.() ?? new Date();
+                    return (
+                      <tr key={exp.id} className="border-t transition-colors hover:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+                        <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
+                          {d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-5 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>
+                          {exp.concept}
+                        </td>
+                        <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
+                          {exp.registeredByName}
+                        </td>
+                        <td className="px-5 py-3 font-bold text-right" style={{ color: '#ef4444' }}>
+                          -${exp.amount.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

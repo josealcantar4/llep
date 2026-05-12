@@ -8,7 +8,7 @@ import ReactDOM from 'react-dom/client';
 import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import './index.css';
-import { onAuthChange, getUserProfile } from './firebase/auth.js';
+import { onAuthChange, getUserProfile, logout } from './firebase/auth.js';
 import useAuthStore from './store/useAuthStore.js';
 
 function Root() {
@@ -19,7 +19,13 @@ function Root() {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
         const profile = await getUserProfile(firebaseUser.uid);
-        setUser(profile ?? { uid: firebaseUser.uid, email: firebaseUser.email, role: 'sales' });
+        if (profile && profile.active === false) {
+          toast.error('Tu cuenta ha sido desactivada');
+          await logout();
+          clearUser();
+        } else {
+          setUser(profile ?? { uid: firebaseUser.uid, email: firebaseUser.email, role: 'sales', active: true });
+        }
       } else {
         clearUser();
       }
