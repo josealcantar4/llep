@@ -271,17 +271,17 @@ export default function UsersAdminPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-2">
                             {!isShortUser && (
-                              <button onClick={() => handleResetPassword(u.email)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400" title="Restablecer Contraseña">
-                                <Key size={14} />
+                              <button onClick={() => handleResetPassword(u.email)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-400 transition-colors" title="Restablecer Contraseña">
+                                <Key size={16} />
                               </button>
                             )}
-                            <button onClick={() => startEdit(u)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400" title="Editar">
-                              <Edit2 size={14} />
+                            <button onClick={() => startEdit(u)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-400 transition-colors" title="Editar">
+                              <Edit2 size={16} />
                             </button>
-                            <button onClick={() => handleToggleActive(u.id, isActive)} className={`p-1.5 rounded-lg hover:bg-white/10 ${isActive ? 'text-red-400 hover:text-red-500' : 'text-emerald-400 hover:text-emerald-500'}`} title={isActive ? 'Desactivar' : 'Reactivar'}>
-                              {isActive ? <Ban size={14} /> : <CheckCircle size={14} />}
+                            <button onClick={() => handleToggleActive(u.id, isActive)} className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors ${isActive ? 'text-red-400 hover:bg-red-500/10 hover:text-red-500' : 'text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-500'}`} title={isActive ? 'Desactivar' : 'Reactivar'}>
+                              {isActive ? <Ban size={16} /> : <CheckCircle size={16} />}
                             </button>
                           </div>
                         </td>

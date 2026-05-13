@@ -73,8 +73,8 @@ export default function CartPanel({ tableId, items, setItems }) {
           )}
         </div>
         {items.length > 0 && (
-          <button onClick={clearCart} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
-            <Trash2 size={14} color="var(--danger)" />
+          <button onClick={clearCart} className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors flex-shrink-0" title="Vaciar cuenta">
+            <Trash2 size={20} color="var(--danger)" />
           </button>
         )}
       </div>
@@ -112,8 +112,8 @@ export default function CartPanel({ tableId, items, setItems }) {
                     <span className="text-sm font-semibold truncate">{item.name}</span>
                   </div>
                   <button onClick={() => removeItem(item.id)}
-                          className="p-0.5 flex-shrink-0 hover:bg-white/10 rounded">
-                    <Trash2 size={12} color="var(--text-secondary)" />
+                          className="w-12 h-12 flex items-center justify-center flex-shrink-0 hover:bg-white/10 rounded-lg transition-colors">
+                    <Trash2 size={18} color="var(--text-secondary)" />
                   </button>
                 </div>
 
@@ -135,17 +135,17 @@ export default function CartPanel({ tableId, items, setItems }) {
                 ))}
 
                 {/* Controles cantidad + precio */}
-                <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => updateQty(item.id, -1)}
-                      className="w-6 h-6 rounded-md text-sm font-bold flex items-center justify-center"
+                      className="w-12 h-12 rounded-xl text-lg font-bold flex items-center justify-center transition-transform active:scale-95 flex-shrink-0"
                       style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     >−</button>
-                    <span className="text-sm font-bold w-5 text-center">{item.qty}</span>
+                    <span className="text-base font-bold w-6 text-center">{item.qty}</span>
                     <button
                       onClick={() => updateQty(item.id, 1)}
-                      className="w-6 h-6 rounded-md text-sm font-bold flex items-center justify-center"
+                      className="w-12 h-12 rounded-xl text-lg font-bold flex items-center justify-center transition-transform active:scale-95 flex-shrink-0"
                       style={{ background: 'rgba(245,158,11,0.2)', color: 'var(--accent)' }}
                     >+</button>
                   </div>

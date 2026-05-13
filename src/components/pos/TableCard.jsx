@@ -75,12 +75,12 @@ export default function TableCard({ table }) {
       }}
     >
       {/* Header: número y estado */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex-1 min-w-0">
           <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>
             {isOpen ? 'EN SERVICIO' : 'DISPONIBLE'}
           </p>
-          <h3 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-xl font-black truncate" style={{ color: 'var(--text-primary)' }}>
             {table.name}
           </h3>
         </div>
@@ -102,7 +102,7 @@ export default function TableCard({ table }) {
       {/* Info de cuenta (solo si está abierta) */}
       {isOpen && (
         <div className="space-y-2">
-          <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'var(--text-secondary)' }}>
             <span className="flex items-center gap-1">
               <Clock size={12} /> {elapsed}
             </span>

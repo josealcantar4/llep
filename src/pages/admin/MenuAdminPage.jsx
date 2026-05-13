@@ -235,17 +235,20 @@ function ItemForm({ initial, categories, onSave, onCancel }) {
                 </div>
               )}
               {extras.map((extra, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  <input className="pos-input text-sm py-2" placeholder="Nombre (Ej: Doble carne)" 
+                <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-center p-4 rounded-xl bg-black/20 border border-white/5">
+                  <input className="pos-input flex-1 min-w-[150px]" placeholder="Nombre (Ej: Doble carne)" 
                          value={extra.name} onChange={e => updateExtra(idx, 'name', e.target.value)} required />
-                  <div className="relative w-32">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--text-secondary)' }}>+$</span>
-                    <input type="number" className="pos-input py-2 pl-7 text-sm" min="0" step="0.01" placeholder="0.00"
+                  <div className="relative w-32 flex-shrink-0">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">+$</span>
+                    <input type="number" className="pos-input pl-8" min="0" step="0.01" placeholder="0.00"
                            value={extra.price} onChange={e => updateExtra(idx, 'price', parseFloat(e.target.value) || 0)} required />
                   </div>
-                  <button type="button" onClick={() => removeExtra(idx)} className="p-2.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 mt-2 md:mt-0 border-white/5">
+                    <button type="button" onClick={() => removeExtra(idx)} 
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-red-500 hover:bg-red-500/15 transition-colors border border-red-500/20 w-full md:w-auto px-4 md:px-0">
+                      <Trash2 size={18} /> <span className="md:hidden ml-2 font-bold">Eliminar</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -393,14 +396,14 @@ export default function MenuAdminPage() {
                     </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditCat(cat); setFormType('cat'); }}
-                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
                       title="Editar Categoría"
-                    ><Pencil size={16} color="var(--text-secondary)" /></button>
+                    ><Pencil size={18} color="var(--text-secondary)" /></button>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteCategory(cat); }}
-                      className="p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-500/10 transition-colors"
                       title="Eliminar Categoría"
-                    ><Trash2 size={16} color="#ef4444" /></button>
+                    ><Trash2 size={18} color="#ef4444" /></button>
                     <div className="p-1 ml-2">
                       {isOpen
                         ? <ChevronDown size={20} color="var(--text-secondary)" />
@@ -463,22 +466,22 @@ export default function MenuAdminPage() {
                                 <button
                                   onClick={() => toggleAvailable(item)}
                                   title={item.available ? 'Marcar Agotado' : 'Marcar Disponible'}
-                                  className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
                                 >
                                   {item.available
-                                    ? <ToggleRight size={22} color="var(--accent)" />
-                                    : <ToggleLeft  size={22} color="var(--text-secondary)" />}
+                                    ? <ToggleRight size={24} color="var(--accent)" />
+                                    : <ToggleLeft  size={24} color="var(--text-secondary)" />}
                                 </button>
                                 <button
                                   onClick={() => { setEditItem(item); setFormType('item'); }}
                                   title="Editar Platillo"
-                                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                                ><Pencil size={15} color="var(--text-secondary)" /></button>
+                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
+                                ><Pencil size={18} color="var(--text-secondary)" /></button>
                                 <button
                                   onClick={() => deleteItem(item)}
                                   title="Eliminar Platillo"
-                                  className="p-2 rounded-lg hover:bg-red-500/10 transition-colors"
-                                ><Trash2 size={15} color="#ef4444" /></button>
+                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-500/10 transition-colors"
+                                ><Trash2 size={18} color="#ef4444" /></button>
                               </div>
                             </div>
                           ))}

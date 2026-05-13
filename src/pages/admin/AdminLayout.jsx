@@ -91,28 +91,23 @@ export default function AdminLayout() {
   );
 
   return (
-    <div className="flex h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
       {/* ── Sidebar escritorio ───────────────────────────────────────────── */}
-      <aside
-        className="hidden lg:flex flex-col w-60 flex-shrink-0 border-r"
-        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}
-      >
+      <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 border-r border-[var(--border)] bg-[var(--bg-secondary)] z-20">
         <SidebarContent />
       </aside>
 
       {/* ── Sidebar móvil (overlay) ──────────────────────────────────────── */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
-          <aside
-            className="relative w-60 flex flex-col"
-            style={{ background: 'var(--bg-secondary)' }}
-          >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="relative w-64 flex flex-col bg-[var(--bg-secondary)] h-full shadow-2xl">
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/5"
+              className="absolute top-4 right-4 flex items-center justify-center p-2 rounded-xl bg-black/20 hover:bg-black/40 transition-colors"
+              style={{ minHeight: '48px', minWidth: '48px' }}
             >
-              <X size={18} color="var(--text-secondary)" />
+              <X size={20} color="var(--text-secondary)" />
             </button>
             <SidebarContent />
           </aside>
@@ -120,21 +115,23 @@ export default function AdminLayout() {
       )}
 
       {/* ── Contenido principal ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top bar móvil */}
-        <div
-          className="lg:hidden flex items-center gap-3 px-4 py-3 border-b"
-          style={{ borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}
-        >
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-white/5">
-            <MenuIcon size={18} color="var(--text-secondary)" />
+        <div className="lg:hidden flex-shrink-0 flex items-center gap-4 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="flex items-center justify-center p-2 rounded-xl hover:bg-white/5 transition-colors"
+            style={{ minHeight: '48px', minWidth: '48px' }}
+          >
+            <MenuIcon size={24} color="var(--text-primary)" />
           </button>
-          <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+          <span className="font-bold text-lg text-[var(--text-primary)]">
             Administración
           </span>
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        {/* Main area with overflow-y-auto */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
           <Outlet />
         </main>
       </div>

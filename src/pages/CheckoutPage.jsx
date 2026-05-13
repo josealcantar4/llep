@@ -223,7 +223,7 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-4 gap-2 mb-3">
             {[0, 10, 15, 20].map((pct) => (
               <button key={pct} onClick={() => pct === 0 ? (setTipPreset(null), setTipAmount('')) : handleTipPreset(pct)}
-                className="py-2 rounded-xl text-sm font-bold transition-all border"
+                className="py-2 rounded-xl text-sm font-bold transition-all border min-h-[48px] flex items-center justify-center"
                 style={{
                   background: ((pct===0 && !tipPreset && !tipAmount) || tipPreset===pct) ? 'rgba(245,158,11,0.15)' : 'var(--bg-elevated)',
                   borderColor: ((pct===0 && !tipPreset && !tipAmount) || tipPreset===pct) ? 'var(--accent)' : 'transparent',
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Toggle de Pago Combinado */}
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed mb-5 cursor-pointer transition-colors"
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed mb-5 cursor-pointer transition-colors min-h-[64px]"
                style={{ borderColor: isSplit ? 'var(--accent)' : 'var(--border)', background: isSplit ? 'rgba(245,158,11,0.05)' : 'transparent' }}
                onClick={() => { setSplit(!isSplit); setSplitAmounts({cash:'', card:'', transfer:''}); }}>
             <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSplit ? 'bg-amber-500' : 'bg-slate-700'}`}>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHODS.map(({ id, label, Icon, color }) => (
                 <button key={id} onClick={() => { setMethod(id); setReference(''); }}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all"
+                  className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all min-h-[80px]"
                   style={{ borderColor: method === id ? color : 'var(--border)', background: method === id ? `${color}15` : 'var(--bg-elevated)' }}>
                   <Icon size={20} color={method === id ? color : 'var(--text-secondary)'} />
                   <span className="text-xs font-semibold" style={{ color: method === id ? color : 'var(--text-secondary)' }}>{label}</span>

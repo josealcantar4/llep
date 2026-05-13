@@ -73,67 +73,32 @@ html, body, #root {
 }
 
 /* ── Utilidades POS ──────────────────────────────────────────────────────── */
-.pos-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color 0.2s, transform 0.15s;
-}
-.pos-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+@layer components {
+  .pos-card {
+    @apply bg-[var(--bg-card)] border border-[var(--border)] rounded-xl transition-all hover:border-[var(--accent)] hover:-translate-y-[1px];
+  }
 
-.badge-open   { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.badge-closed { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+  .badge-open   { @apply bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 px-2 py-1 rounded text-xs font-medium; }
+  .badge-closed { @apply bg-slate-500/15 text-slate-400 border border-slate-500/20 px-2 py-1 rounded text-xs font-medium; }
 
-/* ── Botones de acción ───────────────────────────────────────────────────── */
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #0f172a;
-  font-weight: 700;
-  border-radius: 10px;
-  padding: 0.6rem 1.2rem;
-  transition: opacity 0.2s, transform 0.15s;
-  cursor: pointer;
-  border: none;
-}
-.btn-primary:hover  { opacity: 0.9; transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
+  /* ── Botones de acción ───────────────────────────────────────────────────── */
+  .pos-btn-primary, .btn-primary {
+    @apply min-h-[48px] bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] text-[#0f172a] font-bold rounded-xl px-5 py-2 transition-all cursor-pointer border-none flex items-center justify-center gap-2 hover:opacity-90 hover:-translate-y-[1px] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.6rem 1.2rem;
-  transition: border-color 0.2s, color 0.2s;
-  cursor: pointer;
-}
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .pos-btn-secondary, .btn-ghost {
+    @apply min-h-[48px] bg-transparent text-[var(--text-secondary)] border border-[var(--border)] font-bold rounded-xl px-5 py-2 transition-all cursor-pointer flex items-center justify-center gap-2 hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-.btn-danger {
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239,68,68,0.3);
-  border-radius: 10px;
-  padding: 0.6rem 1.2rem;
-  transition: background 0.2s;
-  cursor: pointer;
-}
-.btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .pos-btn-danger, .btn-danger {
+    @apply min-h-[48px] bg-red-500/15 text-red-500 border border-red-500/30 font-bold rounded-xl px-5 py-2 transition-colors cursor-pointer flex items-center justify-center gap-2 hover:bg-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-/* ── Input global ────────────────────────────────────────────────────────── */
-.pos-input {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  padding: 0.6rem 0.9rem;
-  width: 100%;
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-  outline: none;
+  /* ── Input global ────────────────────────────────────────────────────────── */
+  .pos-input {
+    @apply min-h-[48px] w-full bg-[var(--bg-primary)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-4 py-2 text-[0.95rem] outline-none transition-colors placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)];
+  }
 }
-.pos-input:focus { border-color: var(--accent); }
-.pos-input::placeholder { color: var(--text-secondary); }
 
 /* ── Modal overlay ───────────────────────────────────────────────────────── */
 .modal-overlay {

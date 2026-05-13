@@ -71,7 +71,7 @@ export default function ExpensesPage() {
           </p>
         </div>
         {!showForm && (
-          <button onClick={() => setShowForm(true)} className="btn-primary text-sm flex items-center gap-2">
+          <button onClick={() => setShowForm(true)} className="btn-primary text-sm flex items-center gap-2 min-h-[48px] px-5">
             <PlusCircle size={16} />
             Nuevo Egreso
           </button>
@@ -91,7 +91,7 @@ export default function ExpensesPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSave} className="space-y-5">
+          <form onSubmit={handleSave} className="space-y-5 pb-20">
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5"
                      style={{ color: 'var(--text-secondary)' }}>
@@ -150,7 +150,7 @@ export default function ExpensesPage() {
                 id="btn-save-expense"
                 type="submit"
                 disabled={saving}
-                className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-sm"
+                className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-base min-h-[56px]"
               >
                 {saving ? <LoadingSpinner size="sm" /> : <PlusCircle size={16} />}
                 Guardar Egreso

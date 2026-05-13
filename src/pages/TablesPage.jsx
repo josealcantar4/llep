@@ -75,17 +75,10 @@ export default function TablesPage() {
   const closedCount = tables.filter((t) => t.status !== 'open').length;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex flex-col h-screen overflow-hidden bg-[var(--bg-primary)]">
 
       {/* ── Top Bar ─────────────────────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b"
-        style={{
-          background: 'rgba(15,23,42,0.95)',
-          backdropFilter: 'blur(12px)',
-          borderColor: 'var(--border)',
-        }}
-      >
+      <header className="flex-shrink-0 z-40 flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur-md">
         {/* Logo */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -150,7 +143,8 @@ export default function TablesPage() {
       </header>
 
       {/* ── Contenido ───────────────────────────────────────────────────── */}
-      <main className="p-4 max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto p-4">
+        <div className="max-w-7xl mx-auto">
         {/* Estadísticas rápidas */}
         <div className="flex items-center gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-2">
@@ -189,6 +183,7 @@ export default function TablesPage() {
             ))}
           </div>
         )}
+        </div>
       </main>
 
       {/* ── Modal: Agregar mesa ──────────────────────────────────────────── */}

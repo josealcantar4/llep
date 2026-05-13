@@ -106,17 +106,10 @@ export default function OrderPage() {
   const cartCount = items.reduce((s, i) => s + i.qty, 0);
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex flex-col h-screen overflow-hidden bg-[var(--bg-primary)]">
 
       {/* ── Top Bar ─────────────────────────────────────────────────────── */}
-      <header
-        className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b z-30"
-        style={{
-          background: 'rgba(15,23,42,0.98)',
-          backdropFilter: 'blur(12px)',
-          borderColor: 'var(--border)',
-        }}
-      >
+      <header className="flex-shrink-0 z-30 flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <button
             id="btn-back-tables"

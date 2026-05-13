@@ -57,18 +57,18 @@ export default function MenuGrid({ onSelectItem }) {
         />
         {search && (
           <button onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2">
-            <X size={14} color="var(--text-secondary)" />
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center transition-colors hover:bg-white/5 rounded-lg">
+            <X size={18} color="var(--text-secondary)" />
           </button>
         )}
       </div>
 
       {/* Tabs de categorías */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
         <button
           id="cat-all"
           onClick={() => setActiveCategory('all')}
-          className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+          className="flex-shrink-0 px-5 min-h-[48px] rounded-xl text-sm font-semibold transition-all flex items-center justify-center"
           style={{
             background: activeCategory === 'all' ? 'var(--accent)' : 'var(--bg-elevated)',
             color: activeCategory === 'all' ? '#0f172a' : 'var(--text-secondary)',
@@ -81,13 +81,13 @@ export default function MenuGrid({ onSelectItem }) {
             key={cat.id}
             id={`cat-${cat.id}`}
             onClick={() => setActiveCategory(cat.id)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+            className="flex-shrink-0 px-5 min-h-[48px] rounded-xl text-sm font-semibold transition-all flex items-center justify-center whitespace-nowrap"
             style={{
               background: activeCategory === cat.id ? 'var(--accent)' : 'var(--bg-elevated)',
               color: activeCategory === cat.id ? '#0f172a' : 'var(--text-secondary)',
             }}
           >
-            {cat.emoji && <span className="mr-1">{cat.emoji}</span>}
+            {cat.emoji && <span className="mr-2 text-lg">{cat.emoji}</span>}
             {cat.name}
           </button>
         ))}
@@ -108,7 +108,7 @@ export default function MenuGrid({ onSelectItem }) {
               key={item.id}
               id={`menu-item-${item.id}`}
               onClick={() => onSelectItem(item)}
-              className="pos-card p-3 text-left flex flex-col gap-1.5 active:scale-95 transition-transform"
+              className="pos-card p-4 min-h-[100px] text-left flex flex-col gap-1.5 active:scale-95 transition-transform"
             >
               {/* Categoría badge */}
               <span className="text-xs font-medium"

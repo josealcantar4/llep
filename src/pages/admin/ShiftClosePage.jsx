@@ -114,10 +114,9 @@ export default function ShiftClosePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          {/* ── Resumen de ventas ────────────────────────────────────────────── */}
-          <div className="pos-card p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Resumen de ventas ────────────────────────────────────────────── */}
+        <div className="pos-card p-5">
             <h2 className="font-bold text-sm mb-4 flex items-center gap-2"
                 style={{ color: 'var(--text-primary)' }}>
               <TrendingUp size={16} color="var(--accent)" /> Ventas del día
@@ -128,10 +127,10 @@ export default function ShiftClosePage() {
             <SummaryRow label="Transferencias"      value={fmt(metrics.transferSales)} color="#8b5cf6" />
             <SummaryRow label="Propinas cobradas"   value={fmt(metrics.totalTips)}     color="var(--accent)" />
             <SummaryRow label="TOTAL VENTAS"        value={fmt(metrics.totalSales)}    color="var(--accent)" big />
-          </div>
+        </div>
 
-          {/* ── Egresos ──────────────────────────────────────────────────────── */}
-          <div className="pos-card p-5">
+        {/* ── Egresos ──────────────────────────────────────────────────────── */}
+        <div className="pos-card p-5">
             <h2 className="font-bold text-sm mb-4 flex items-center gap-2"
                 style={{ color: 'var(--text-primary)' }}>
               <TrendingDown size={16} color="#ef4444" /> Egresos de caja
@@ -146,7 +145,6 @@ export default function ShiftClosePage() {
                 <SummaryRow label="TOTAL EGRESOS" value={`-${fmt(metrics.totalExpenses)}`} color="#ef4444" big />
               </>
             )}
-          </div>
         </div>
 
         <div className="space-y-6">
@@ -167,7 +165,7 @@ export default function ShiftClosePage() {
             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
               Ventas en efectivo − Egresos = Efectivo en cajón
             </p>
-            <div className="text-5xl font-black" style={{
+            <div className="text-5xl font-black truncate max-w-full" style={{
               color: metrics.cashInDrawer >= 0 ? '#10b981' : '#ef4444',
             }}>
               {fmt(metrics.cashInDrawer)}
@@ -196,7 +194,7 @@ export default function ShiftClosePage() {
               id="btn-close-shift"
               onClick={handleClose}
               disabled={saving || orders.length === 0}
-              className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg"
+              className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg min-h-[64px]"
               style={{ opacity: orders.length === 0 ? 0.5 : 1 }}
             >
               {saving ? <LoadingSpinner size="md" /> : <Scissors size={22} />}
