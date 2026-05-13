@@ -10,6 +10,10 @@ import App from './App.jsx';
 import './index.css';
 import { onAuthChange, getUserProfile, logout } from './firebase/auth.js';
 import useAuthStore from './store/useAuthStore.js';
+import { registerSW } from 'virtual:pwa-register';
+
+// Registrar el Service Worker inmediatamente para la PWA
+registerSW({ immediate: true });
 
 function Root() {
   const { setUser, clearUser } = useAuthStore();
