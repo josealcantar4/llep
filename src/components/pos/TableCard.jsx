@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChefHat, Clock, ShoppingBag, DoorOpen } from 'lucide-react';
+import { ChefHat, Clock, ShoppingBag, DoorOpen, ArrowRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config.js';
 import useAuthStore from '../../store/useAuthStore.js';
@@ -65,75 +65,99 @@ export default function TableCard({ table }) {
   return (
     <div
       id={`table-card-${table.id}`}
-      className="pos-card p-5 cursor-pointer select-none"
       onClick={isOpen ? handleGoToOrder : handleOpen}
+      className={`group relative flex flex-col justify-between cursor-pointer select-none transition-all duration-500 overflow-hidden rounded-2xl ${
+        isOpen
+          ? 'min-h-[220px] shadow-[0_8px_30px_rgba(245,158,11,0.12)] hover:shadow-[0_12px_40px_rgba(245,158,11,0.25)] border border-[rgba(245,158,11,0.3)] hover:border-[rgba(245,158,11,0.6)] hover:-translate-y-1.5'
+          : 'min-h-[160px] shadow-lg hover:shadow-xl border border-[var(--border)] hover:border-slate-400/50 hover:-translate-y-1'
+      }`}
       style={{
-        borderColor: isOpen ? 'rgba(245,158,11,0.4)' : 'var(--border)',
-        background:  isOpen
-          ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(30,41,59,1) 100%)'
+        background: isOpen
+          ? 'linear-gradient(145deg, rgba(30,41,59,1) 0%, rgba(15,23,42,1) 100%)' // Fondo oscuro premium para mesas activas
           : 'var(--bg-card)',
+        padding: '1.5rem', // pl-6 pr-6 pt-6 pb-6: ¡Mucho más espacio interior!
       }}
     >
-      {/* Header: número y estado */}
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>
-            {isOpen ? 'EN SERVICIO' : 'DISPONIBLE'}
-          </p>
-          <h3 className="text-xl font-black truncate" style={{ color: 'var(--text-primary)' }}>
+      {/* Glow de fondo suave para mesas abiertas */}
+      {isOpen && (
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+      )}
+
+      {/* HEADER: Estado y Nombre */}
+      <div className="flex items-start justify-between z-10">
+        <div className="flex-1 min-w-0 pr-4">
+          {/* Badge o "Píldora" de Estado */}
+          <div className="mb-3">
+            <span 
+              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                isOpen 
+                  ? 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30' 
+                  : 'bg-slate-500/10 text-slate-500 ring-1 ring-slate-500/20'
+              }`}
+            >
+              {isOpen ? 'En Servicio' : 'Disponible'}
+            </span>
+          </div>
+          
+          <h3 className="text-2xl sm:text-3xl font-black tracking-tight truncate transition-colors duration-300" 
+              style={{ color: isOpen ? '#f8fafc' : 'var(--text-primary)' }}>
             {table.name}
           </h3>
         </div>
+
+        {/* Icono de la mesa */}
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{
-            background: isOpen
-              ? 'rgba(245,158,11,0.15)'
-              : 'rgba(148,163,184,0.1)',
-          }}
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-500 group-hover:scale-110 ${
+            isOpen ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+          }`}
         >
-          {isOpen
-            ? <ChefHat size={20} color="var(--accent)" />
-            : <DoorOpen size={20} color="var(--text-secondary)" />
-          }
+          {isOpen ? <ChefHat size={24} strokeWidth={2.5} /> : <DoorOpen size={22} strokeWidth={2} />}
         </div>
       </div>
 
-      {/* Info de cuenta (solo si está abierta) */}
+      {/* FOOTER: Detalles y Total (SOLO MESA ABIERTA) */}
       {isOpen && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <span className="flex items-center gap-1">
-              <Clock size={12} /> {elapsed}
+        <div className="mt-6 flex flex-col gap-4 z-10">
+          {/* Cajita de información (Tiempo y Artículos) */}
+          <div className="flex items-center gap-4 bg-slate-800/60 p-3 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300">
+              <Clock size={14} className="text-amber-500/70" /> {elapsed}
             </span>
-            <span className="flex items-center gap-1">
-              <ShoppingBag size={12} /> {itemCount} ítem{itemCount !== 1 ? 's' : ''}
+            <span className="w-px h-3 bg-slate-600 rounded-full" />
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300">
+              <ShoppingBag size={14} className="text-amber-500/70" /> {itemCount} ítem{itemCount !== 1 ? 's' : ''}
             </span>
           </div>
-          <div className="flex items-center justify-between pt-2 border-t"
-               style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
-            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Total parcial</span>
-            <span className="font-bold text-base" style={{ color: 'var(--accent)' }}>
-              ${subtotal.toFixed(2)}
-            </span>
+
+          {/* Separador, Punto Pulsante y Total */}
+          <div className="flex items-end justify-between pt-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </span>
+              <span className="text-xs font-semibold text-slate-400">Activa</span>
+            </div>
+            
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">Total</p>
+              <p className="font-black text-2xl tracking-tight text-amber-500 leading-none">
+                ${subtotal.toFixed(2)}
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Botón cuando está libre */}
+      {/* FOOTER: Botón sutil (SOLO MESA LIBRE) */}
       {!isOpen && (
-        <p className="text-xs mt-3" style={{ color: 'var(--text-secondary)' }}>
-          Toca para abrir esta mesa →
-        </p>
-      )}
-
-      {/* Indicador de ocupación (punto pulsante) */}
-      {isOpen && (
-        <div className="flex items-center gap-1.5 mt-3">
-          <span className="animate-pulse-ring w-2 h-2 rounded-full bg-amber-500 inline-block" />
-          <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
-            Cuenta abierta
-          </span>
+        <div className="mt-8 flex items-center justify-between z-10 text-slate-400 group-hover:text-[var(--accent)] transition-colors duration-300">
+          <p className="text-sm font-semibold tracking-wide">
+            Toca para abrir
+          </p>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 group-hover:bg-[var(--accent)] group-hover:text-white transition-all duration-300 transform group-hover:translate-x-1">
+            <ArrowRight size={16} strokeWidth={2.5} />
+          </div>
         </div>
       )}
     </div>
