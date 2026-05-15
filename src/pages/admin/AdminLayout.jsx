@@ -84,7 +84,7 @@ export default function AdminLayout() {
           <LogOut size={17} /> Cerrar sesión
         </button>
         <p className="text-xs px-4 pt-2" style={{ color: 'var(--text-secondary)' }}>
-          {user?.displayName ?? user?.name ?? user?.email}
+          {user?.username ?? user?.displayName ?? user?.name ?? user?.email}
         </p>
       </div>
     </div>

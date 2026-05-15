@@ -1,15 +1,16 @@
 // src/pages/OrderPage.jsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Pantalla de toma de orden. Layout de dos columnas con diseño Premium POS.
-//   izquierda → menú + búsqueda
-//   derecha   → carrito de la mesa activa
+//   izquierda → menú + búsqueda
+//   derecha   → carrito de la mesa activa
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, ReceiptText, Menu as MenuIcon } from 'lucide-react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { ArrowLeft, ShoppingBag, ReceiptText, Menu as MenuIcon, Trash2 } from 'lucide-react';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { db } from '../firebase/config.js';
+import useAuthStore from '../store/useAuthStore.js';
 import MenuGrid from '../components/pos/MenuGrid.jsx';
 import CartPanel from '../components/pos/CartPanel.jsx';
 import ModifierModal from '../components/pos/ModifierModal.jsx';
@@ -19,6 +20,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 export default function OrderPage() {
   const { tableId } = useParams();
   const navigate    = useNavigate();
+  const { role }    = useAuthStore();
 
   const [table,        setTable]        = useState(null);
   const [items,        setItems]        = useState([]);
@@ -28,6 +30,7 @@ export default function OrderPage() {
   const [selectedItem,  setSelectedItem]  = useState(null); // ítem del menú para modificador
   const [modifierOpen,  setModifierOpen]  = useState(false);
   const [freeItemOpen,  setFreeItemOpen]  = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false); // Estado para el Pop-up de confirmación
 
   // Panel móvil: 'menu' | 'cart'
   const [mobileTab, setMobileTab] = useState('menu');
@@ -100,6 +103,19 @@ export default function OrderPage() {
     }
   }, [items, tableId]);
 
+  /* ── Eliminar Mesa Confirmada ──────────────────────────────────────── */
+  const confirmDeleteTable = async () => {
+    setDeleteModalOpen(false);
+    try {
+      await deleteDoc(doc(db, 'tables', tableId));
+      toast.success('Mesa eliminada correctamente');
+      navigate('/');
+    } catch (e) {
+      toast.error('No se pudo eliminar la mesa');
+      console.error(e);
+    }
+  };
+
   if (loading) return <LoadingSpinner fullScreen />;
   if (!table)  return null;
 
@@ -138,28 +154,41 @@ export default function OrderPage() {
           </div>
         </div>
 
-        {/* Botón Venta Libre (Estilo Premium Verde) */}
-        {/* Botón Venta Libre (Estilo Premium Glass Verde) */}
-        <button
-          id="btn-free-item"
-          onClick={() => setFreeItemOpen(true)}
-          className="group flex items-center justify-center gap-3 px-8 h-14 rounded-[1.25rem] text-[13px] sm:text-[14px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:translate-y-0 active:scale-95"
-          style={{
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.05) 100%)',
-            color: '#10b981',
-            border: '1px solid rgba(16,185,129,0.4)',
-            // Sombra exterior para el resplandor + Sombra interior blanca para efecto biselado de cristal
-            boxShadow: '0 10px 30px -5px rgba(16,185,129,0.3), inset 0 1px 2px rgba(255,255,255,0.15)'
-          }}
-        >
-          <ShoppingBag 
-            size={22} 
-            strokeWidth={2.5} 
-            className="transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
-          />
-          <span className="hidden sm:inline">Venta Libre</span>
-          <span className="sm:hidden">Libre</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Botón Eliminar (Solo Admin) abre el Pop-up */}
+          {role === 'admin' && (
+            <button
+              id="btn-delete-table"
+              onClick={() => setDeleteModalOpen(true)}
+              className="flex items-center justify-center w-14 h-14 rounded-2xl transition-all hover:bg-red-500/10 active:scale-95 border border-transparent hover:border-red-500/20"
+              style={{ color: '#ef4444' }}
+              title="Eliminar Mesa"
+            >
+              <Trash2 size={22} />
+            </button>
+          )}
+
+          {/* Botón Venta Libre (Estilo Premium Glass Verde) */}
+          <button
+            id="btn-free-item"
+            onClick={() => setFreeItemOpen(true)}
+            className="group flex items-center justify-center gap-3 px-8 h-14 rounded-[1.25rem] text-[13px] sm:text-[14px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:translate-y-0 active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.05) 100%)',
+              color: '#10b981',
+              border: '1px solid rgba(16,185,129,0.4)',
+              boxShadow: '0 10px 30px -5px rgba(16,185,129,0.3), inset 0 1px 2px rgba(255,255,255,0.15)'
+            }}
+          >
+            <ShoppingBag 
+              size={22} 
+              strokeWidth={2.5} 
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
+            />
+            <span className="hidden sm:inline">Venta Libre</span>
+            <span className="sm:hidden">Libre</span>
+          </button>
+        </div>
       </header>
 
       {/* ── Layout principal ─────────────────────────────────────────────── */}
@@ -238,6 +267,69 @@ export default function OrderPage() {
         onClose={() => setFreeItemOpen(false)}
         onConfirm={handleFreeItemConfirm}
       />
+
+      {/* ── Modal Pop-up: Confirmar Eliminación de Mesa ─────────────────── */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl relative overflow-hidden transform scale-100 animate-in zoom-in-95 duration-200"
+            // Espaciado interno generoso para que el modal respire
+            style={{ padding: '40px 30px' }} 
+          >
+            {/* Glow decorativo de fondo */}
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-red-500/20 blur-3xl rounded-full pointer-events-none" />
+
+            <div className="flex flex-col items-center text-center relative z-10">
+              
+              {/* Ícono de advertencia con margin inferior */}
+              <div 
+                className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center ring-4 ring-red-500/5"
+                style={{ marginBottom: '24px' }}
+              >
+                <Trash2 size={32} className="text-red-500" />
+              </div>
+              
+              {/* Título espaciado */}
+              <h2 
+                className="text-2xl font-black text-white"
+                style={{ marginBottom: '16px' }}
+              >
+                ¿Eliminar Mesa?
+              </h2>
+              
+              {/* Texto explicativo con line-height para que se lea fácil y margin bottom para separarlo de los botones */}
+              <p 
+                className="text-slate-300 text-sm"
+                style={{ marginBottom: '35px', lineHeight: '1.6' }}
+              >
+                Estás a punto de eliminar definitivamente la <strong className="text-white">"{table.name}"</strong>. 
+                <span className="text-red-400 font-semibold block mt-2">Esta acción no se puede deshacer.</span>
+              </p>
+
+              {/* Contenedor de botones con gap explícito */}
+              <div className="flex items-center w-full" style={{ gap: '16px' }}>
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="flex-1 rounded-2xl text-slate-300 font-bold bg-slate-700/50 hover:bg-slate-700 transition-colors"
+                  // Padding interno amplio en el botón
+                  style={{ padding: '16px 20px', fontSize: '15px' }} 
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteTable}
+                  className="flex-1 rounded-2xl text-white font-bold bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.25)] transition-all active:scale-95"
+                  // Padding interno amplio en el botón
+                  style={{ padding: '16px 20px', fontSize: '15px' }} 
+                >
+                  Sí, Eliminar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
