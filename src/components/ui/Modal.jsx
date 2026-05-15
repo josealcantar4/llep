@@ -3,6 +3,7 @@
 // Modal reutilizable con glassmorphism y cierre por Escape / click fuera.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { X } from 'lucide-react';
 
 /**
@@ -21,9 +22,21 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  // Bloquear scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <div
       className="modal-overlay animate-fadeIn"
       onClick={onClose}
@@ -57,4 +70,6 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(content, document.body);
 }

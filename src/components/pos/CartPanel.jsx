@@ -9,14 +9,19 @@ import { ShoppingCart, Trash2, CreditCard, StickyNote, Tag, AlertTriangle } from
 import toast from 'react-hot-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config.js';
+import useAuthStore from '../../store/useAuthStore.js';
 
 /**
  * @param {string} tableId  - ID de la mesa
  * @param {Array}  items    - Ítems en el carrito
  * @param {Function} setItems - Setter local (sync inmediato)
  */
-export default function CartPanel({ tableId, items, setItems }) {
+export default function CartPanel({ tableId, items, setItems, openedBy }) {
   const navigate = useNavigate();
+  const { user, role } = useAuthStore();
+  
+  // VALIDACIÓN DE PERMISOS
+  const canModify = role === 'admin' || user?.uid === openedBy;
   
   // Estado para controlar nuestro pop-up personalizado
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -29,6 +34,12 @@ export default function CartPanel({ tableId, items, setItems }) {
 
   /* ── Actualizar cantidad de un ítem ──────────────────────────────────── */
   const updateQty = async (id, delta) => {
+    // Si intenta reducir a 0 (eliminar) y no tiene permisos, lo bloqueamos
+    if (delta < 0 && items.find(it => it.id === id)?.qty === 1 && !canModify) {
+      toast.error('No tienes permisos para eliminar ítems de esta mesa');
+      return;
+    }
+
     const updated = items
       .map((it) => it.id === id ? { ...it, qty: it.qty + delta } : it)
       .filter((it) => it.qty > 0);
@@ -39,6 +50,10 @@ export default function CartPanel({ tableId, items, setItems }) {
 
   /* ── Eliminar un ítem ─────────────────────────────────────────────────── */
   const removeItem = async (id) => {
+    if (!canModify) {
+      toast.error('Solo el creador o un administrador pueden eliminar ítems');
+      return;
+    }
     const updated = items.filter((it) => it.id !== id);
     setItems(updated);
     try { await updateDoc(doc(db, 'tables', tableId), { items: updated, status: updated.length > 0 ? 'open' : 'available' }); }
@@ -47,6 +62,10 @@ export default function CartPanel({ tableId, items, setItems }) {
 
   /* ── Vaciar carrito (Pop-up personalizado) ────────────────────────────── */
   const requestClearCart = () => {
+    if (!canModify) {
+      toast.error('Solo el creador o un administrador pueden vaciar la cuenta');
+      return;
+    }
     setIsConfirmOpen(true); // Abrimos el pop-up en lugar del alert nativo
   };
 
@@ -85,7 +104,7 @@ export default function CartPanel({ tableId, items, setItems }) {
             </span>
           )}
         </div>
-        {items.length > 0 && (
+        {items.length > 0 && canModify && (
           <button 
             onClick={requestClearCart} 
             className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-red-500/10 transition-colors flex-shrink-0" 
@@ -132,10 +151,12 @@ export default function CartPanel({ tableId, items, setItems }) {
                     )}
                     <span className="text-[16px] font-bold leading-tight">{item.name}</span>
                   </div>
-                  <button onClick={() => removeItem(item.id)}
-                          className="w-10 h-10 flex items-center justify-center flex-shrink-0 hover:bg-white/5 rounded-xl transition-colors">
-                    <Trash2 size={16} color="var(--text-secondary)" className="opacity-70 hover:opacity-100" />
-                  </button>
+                  {canModify && (
+                    <button onClick={() => removeItem(item.id)}
+                            className="w-10 h-10 flex items-center justify-center flex-shrink-0 hover:bg-white/5 rounded-xl transition-colors">
+                      <Trash2 size={16} color="var(--text-secondary)" className="opacity-70 hover:opacity-100" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Contenedor de Notas y Extras */}
@@ -178,9 +199,14 @@ export default function CartPanel({ tableId, items, setItems }) {
                       style={{ background: 'var(--accent)', color: '#0f172a' }}
                     >+</button>
                   </div>
-                  <span className="font-black text-lg" style={{ color: 'var(--accent)' }}>
-                    ${lineTotal.toFixed(2)}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="font-black text-lg" style={{ color: 'var(--accent)' }}>
+                      ${lineTotal.toFixed(2)}
+                    </span>
+                    {!canModify && (
+                      <span className="text-[9px] font-bold uppercase opacity-40 text-white mt-0.5">Solo lectura</span>
+                    )}
+                  </div>
                 </div>
               </div>
             );

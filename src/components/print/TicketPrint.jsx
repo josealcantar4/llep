@@ -111,10 +111,26 @@ const TicketPrint = forwardRef(function TicketPrint({ order, restaurantName = 'L
       <div className="ticket-divider" />
 
       {/* ── PAGO ────────────────────────────────────────────────────────── */}
-      <div className="ticket-row">
-        <span>Forma de pago</span>
-        <span>{methodLabel}</span>
-      </div>
+      {order.paymentType === 'split' ? (
+        <>
+          <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>DETALLE DE PAGO</div>
+          {order.payments?.cash > 0 && (
+            <div className="ticket-row"><span>Efectivo:</span><span>${order.payments.cash.toFixed(2)}</span></div>
+          )}
+          {order.payments?.card > 0 && (
+            <div className="ticket-row"><span>Tarjeta:</span><span>${order.payments.card.toFixed(2)}</span></div>
+          )}
+          {order.payments?.transfer > 0 && (
+            <div className="ticket-row"><span>Transferencia:</span><span>${order.payments.transfer.toFixed(2)}</span></div>
+          )}
+        </>
+      ) : (
+        <div className="ticket-row">
+          <span>Forma de pago</span>
+          <span>{methodLabel}</span>
+        </div>
+      )}
+
       {reference && (
         <div className="ticket-row">
           <span>Referencia</span>

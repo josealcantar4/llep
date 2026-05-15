@@ -7,10 +7,15 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import ReactDOM from 'react-dom';
 import { where, orderBy } from 'firebase/firestore';
-import { TrendingUp, Banknote, CreditCard, Smartphone, ShoppingBag } from 'lucide-react';
+import {
+  TrendingUp, Banknote, CreditCard, Smartphone, ShoppingBag, Printer
+} from 'lucide-react';
 import useFirestoreCollection from '../../hooks/useFirestoreCollection.js';
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
+import TicketPrint from '../../components/print/TicketPrint.jsx';
+import OrderDetailModal from './OrderDetailModal.jsx';
 
 const today = new Date().toISOString().split('T')[0];
 
@@ -18,8 +23,14 @@ const METHOD_COLORS = {
   cash:     '#10b981',
   card:     '#3b82f6',
   transfer: '#8b5cf6',
+  split:    '#f59e0b', // Color ámbar para pagos divididos
 };
-const METHOD_LABELS = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia' };
+const METHOD_LABELS = { 
+  cash:     'Efectivo', 
+  card:     'Tarjeta', 
+  transfer: 'Transferencia',
+  split:    'Combinado'
+};
 
 /* ── KPI Card ─────────────────────────────────────────────────────────────── */
 function KpiCard({ label, value, Icon, color, sub }) {
@@ -43,6 +54,18 @@ export default function DashboardPage() {
     where('shift', '==', today),
     orderBy('createdAt', 'desc'),
   ]);
+
+  const [selectedOrder, setSelectedOrder] = React.useState(null);
+  const [viewOrder, setViewOrder] = React.useState(null);
+
+  const handleReprint = (order, e) => {
+    e.stopPropagation(); // Evitar abrir el modal de detalles
+    setSelectedOrder(order);
+    // Pequeño delay para asegurar que el portal renderice el ticket antes de imprimir
+    setTimeout(() => {
+      window.print();
+    }, 300);
+  };
 
   /* ── Calcular métricas ──────────────────────────────────────────────── */
   const metrics = useMemo(() => {
@@ -198,32 +221,37 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.slice(0, 10).map((order) => {
+                {orders.slice(0, 20).map((order) => {
                   const date = order.createdAt?.toDate?.() ?? new Date();
+                  const methodKey = order.paymentType === 'split' ? 'split' : order.paymentMethod;
                   return (
-                    <tr key={order.id} className="border-t"
-                        style={{ borderColor: 'var(--border)' }}>
-                      <td className="py-2.5" style={{ color: 'var(--text-primary)' }}>
-                        {order.tableName}
+                    <tr 
+                      key={order.id} 
+                      className="border-t cursor-pointer hover:bg-white/5 transition-colors group/row"
+                      style={{ borderColor: 'var(--border)' }}
+                      onClick={() => setViewOrder(order)}
+                    >
+                      <td className="py-3 px-1" style={{ color: 'var(--text-primary)' }}>
+                        <span className="font-bold">{order.tableName}</span>
                       </td>
-                      <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                      <td className="py-3" style={{ color: 'var(--text-secondary)' }}>
                         {date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="py-2.5" style={{ color: 'var(--text-secondary)' }}>
+                      <td className="py-3" style={{ color: 'var(--text-secondary)' }}>
                         {order.cashierName}
                       </td>
-                      <td className="py-2.5">
+                      <td className="py-3">
                         <span
-                          className="px-2 py-0.5 rounded-full text-xs font-medium"
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                           style={{
-                            background: `${METHOD_COLORS[order.paymentMethod]}15`,
-                            color: METHOD_COLORS[order.paymentMethod],
+                            background: `${METHOD_COLORS[methodKey] || '#94a3b8'}15`,
+                            color: METHOD_COLORS[methodKey] || '#94a3b8',
                           }}
                         >
-                          {METHOD_LABELS[order.paymentMethod]}
+                          {METHOD_LABELS[methodKey] || 'N/A'}
                         </span>
                       </td>
-                      <td className="py-2.5 text-right font-bold" style={{ color: 'var(--accent)' }}>
+                      <td className="py-3 text-right font-black" style={{ color: 'var(--accent)' }}>
                         ${order.total.toFixed(2)}
                       </td>
                     </tr>
@@ -234,6 +262,19 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      <OrderDetailModal 
+        isOpen={!!viewOrder} 
+        onClose={() => setViewOrder(null)} 
+        order={viewOrder}
+        onReprint={(order) => handleReprint(order, { stopPropagation: () => {} })}
+      />
+
+      {/* ── Portal de ticket para reimpresión ── */}
+      {selectedOrder && ReactDOM.createPortal(
+        <TicketPrint order={selectedOrder} />,
+        document.getElementById('ticket-print-root')
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 export default function OrderPage() {
   const { tableId } = useParams();
   const navigate    = useNavigate();
-  const { role }    = useAuthStore();
+  const { role, user } = useAuthStore();
 
   const [table,        setTable]        = useState(null);
   const [items,        setItems]        = useState([]);
@@ -106,6 +106,14 @@ export default function OrderPage() {
   /* ── Eliminar Mesa Confirmada ──────────────────────────────────────── */
   const confirmDeleteTable = async () => {
     setDeleteModalOpen(false);
+
+    // VALIDACIÓN DE PERMISOS
+    const canDelete = role === 'admin' || user?.uid === table?.openedBy;
+    if (!canDelete) {
+      toast.error('Solo el creador o un administrador pueden eliminar esta mesa');
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'tables', tableId));
       toast.success('Mesa eliminada correctamente');
@@ -155,8 +163,8 @@ export default function OrderPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Botón Eliminar (Solo Admin) abre el Pop-up */}
-          {role === 'admin' && (
+          {/* Botón Eliminar (Solo Admin o Creador) abre el Pop-up */}
+          {(role === 'admin' || user?.uid === table?.openedBy) && (
             <button
               id="btn-delete-table"
               onClick={() => setDeleteModalOpen(true)}
@@ -214,7 +222,7 @@ export default function OrderPage() {
             backdropFilter: 'blur(10px)'
           }}
         >
-          <CartPanel tableId={tableId} items={items} setItems={setItems} />
+          <CartPanel tableId={tableId} items={items} setItems={setItems} openedBy={table?.openedBy} />
         </div>
       </div>
 
