@@ -31,7 +31,7 @@ export default function TablesPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [adding, setAdding] = useState(false);
-  const [online, setOnline]   = useState(navigator.onLine);
+  const [online, setOnline] = useState(navigator.onLine);
 
   // Monitorear conectividad de forma más robusta
   React.useEffect(() => {
@@ -45,9 +45,9 @@ export default function TablesPage() {
       }
     };
 
-    window.addEventListener('online',  updateStatus);
+    window.addEventListener('online', updateStatus);
     window.addEventListener('offline', updateStatus);
-    window.addEventListener('focus',   updateStatus); // Re-verificar al volver a la ventana
+    window.addEventListener('focus', updateStatus); // Re-verificar al volver a la ventana
 
     // Verificación manual periódica por si los eventos del navegador fallan
     const interval = setInterval(() => {
@@ -56,10 +56,10 @@ export default function TablesPage() {
       }
     }, 5000);
 
-    return () => { 
-      window.removeEventListener('online',  updateStatus); 
+    return () => {
+      window.removeEventListener('online', updateStatus);
       window.removeEventListener('offline', updateStatus);
-      window.removeEventListener('focus',   updateStatus);
+      window.removeEventListener('focus', updateStatus);
       clearInterval(interval);
     };
   }, [online]);
@@ -75,10 +75,10 @@ export default function TablesPage() {
     setAdding(true);
     try {
       await addDoc(collection(db, 'tables'), {
-        name:     newTableName.trim(),
-        number:   tables.length + 1,
-        status:   'closed',
-        items:    [],
+        name: newTableName.trim(),
+        number: tables.length + 1,
+        status: 'closed',
+        items: [],
         openedAt: null,
         openedBy: null,
       });
@@ -93,7 +93,7 @@ export default function TablesPage() {
     }
   };
 
-  const openCount   = tables.filter((t) => t.status === 'open').length;
+  const openCount = tables.filter((t) => t.status === 'open').length;
   const closedCount = tables.filter((t) => t.status !== 'open').length;
 
   return (
@@ -101,12 +101,12 @@ export default function TablesPage() {
 
       {/* ── Top Bar ─────────────────────────────────────────────────────── */}
       <header className="flex-shrink-0 z-40 flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur-md shadow-sm"
-              style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '16px', paddingBottom: '16px' }}>
-        
+        style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '16px', paddingBottom: '16px' }}>
+
         {/* Logo y Usuario */}
         <div className="flex items-center" style={{ gap: '14px' }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-               style={{ background: 'linear-gradient(135deg,var(--accent),var(--accent-dark))' }}>
+            style={{ background: 'linear-gradient(135deg,var(--accent),var(--accent-dark))' }}>
             <UtensilsCrossed size={20} color="#0f172a" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
@@ -121,16 +121,16 @@ export default function TablesPage() {
         <div className="flex items-center" style={{ gap: '12px' }}>
           {/* Indicador de conexión */}
           <div className="flex items-center rounded-2xl text-[12px] font-bold transition-all duration-500"
-               style={{
-                 gap: '8px',
-                 paddingLeft: '14px', paddingRight: '14px', paddingTop: '8px', paddingBottom: '8px',
-                 color: online ? '#10b981' : '#ef4444',
-                 background: online ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                 border: `1px solid ${online ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
-               }}>
+            style={{
+              gap: '8px',
+              paddingLeft: '14px', paddingRight: '14px', paddingTop: '8px', paddingBottom: '8px',
+              color: online ? '#10b981' : '#ef4444',
+              background: online ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+              border: `1px solid ${online ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            }}>
             <div className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-[#10b981]' : 'bg-[#ef4444] animate-pulse shadow-[0_0_8px_#ef4444]'}`} />
             {online ? <Wifi size={14} strokeWidth={2.5} /> : <WifiOff size={14} strokeWidth={2.5} />}
-            <span className="hidden sm:inline uppercase tracking-wider">{online ? 'En línea' : 'Offline'}</span>
+            <span className="hidden lg:inline uppercase tracking-wider">{online ? 'En línea' : 'Offline'}</span>
           </div>
 
           {/* Panel admin (solo admin) */}
@@ -142,7 +142,7 @@ export default function TablesPage() {
               style={{ gap: '8px', paddingLeft: '16px', paddingRight: '16px', paddingTop: '10px', paddingBottom: '10px', color: 'var(--text-primary)', fontSize: '13px' }}
             >
               <LayoutDashboard size={16} />
-              <span className="hidden sm:inline">Admin</span>
+              <span className="hidden lg:inline">Admin</span>
             </button>
           )}
 
@@ -155,7 +155,7 @@ export default function TablesPage() {
               style={{ gap: '8px', paddingLeft: '20px', paddingRight: '20px', paddingTop: '10px', paddingBottom: '10px', fontSize: '13px' }}
             >
               <Plus size={16} strokeWidth={3} />
-              <span className="hidden sm:inline">Mesa</span>
+              <span className="hidden lg:inline">Mesa</span>
             </button>
           )}
 
@@ -167,29 +167,29 @@ export default function TablesPage() {
             style={{ gap: '8px', paddingLeft: '16px', paddingRight: '16px', paddingTop: '10px', paddingBottom: '10px', color: '#ef4444', fontSize: '13px' }}
           >
             <LogOut size={16} />
-            <span className="hidden sm:inline">Salir</span>
+            <span className="hidden lg:inline">Salir</span>
           </button>
         </div>
       </header>
 
       {/* ── Contenido ───────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '32px', paddingBottom: '32px' }}>
-        <div className="max-w-7xl mx-auto">
-          
+        <div className="max-w-full mx-auto">
+
           {/* Estadísticas rápidas */}
-          <div className="flex items-center flex-wrap rounded-2xl border border-[var(--border)] shadow-sm bg-[var(--bg-elevated)]" 
-               style={{ gap: '24px', paddingLeft: '24px', paddingRight: '24px', paddingTop: '16px', paddingBottom: '16px', marginBottom: '32px' }}>
+          <div className="flex items-center flex-wrap rounded-2xl border border-[var(--border)] shadow-sm bg-[var(--bg-elevated)]"
+            style={{ gap: '24px', paddingLeft: '24px', paddingRight: '24px', paddingTop: '16px', paddingBottom: '16px', marginBottom: '32px' }}>
             <div className="flex items-center" style={{ gap: '10px' }}>
               <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
               <span className="text-[14px]" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-black text-[15px]" style={{ color: 'var(--text-primary)', marginRight: '4px' }}>{openCount}</span> 
+                <span className="font-black text-[15px]" style={{ color: 'var(--text-primary)', marginRight: '4px' }}>{openCount}</span>
                 en servicio
               </span>
             </div>
             <div className="flex items-center" style={{ gap: '10px' }}>
               <span className="w-3 h-3 rounded-full bg-slate-500" />
               <span className="text-[14px]" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-black text-[15px]" style={{ color: 'var(--text-primary)', marginRight: '4px' }}>{closedCount}</span> 
+                <span className="font-black text-[15px]" style={{ color: 'var(--text-primary)', marginRight: '4px' }}>{closedCount}</span>
                 disponibles
               </span>
             </div>
@@ -207,8 +207,8 @@ export default function TablesPage() {
                 No hay mesas configuradas actualmente.
               </p>
               {role === 'admin' && (
-                <button 
-                  onClick={() => setAddModalOpen(true)} 
+                <button
+                  onClick={() => setAddModalOpen(true)}
                   className="btn-primary rounded-2xl font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md mt-4"
                   style={{ paddingLeft: '28px', paddingRight: '28px', paddingTop: '14px', paddingBottom: '14px', fontSize: '13px' }}
                 >
@@ -218,7 +218,7 @@ export default function TablesPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" style={{ gap: '20px' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5" style={{ gap: '20px' }}>
               {tables.map((table) => (
                 <TableCard key={table.id} table={table} />
               ))}
@@ -237,7 +237,7 @@ export default function TablesPage() {
         showClose={false}
       >
         <div className="flex flex-col h-full" style={{ paddingTop: '10px' }}>
-          
+
           {/* --- INPUT: NOMBRE DE LA MESA --- */}
           <div style={{ marginLeft: '10px', marginRight: '10px', marginBottom: '32px' }}>
             <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)', paddingLeft: '5px' }}>
@@ -257,8 +257,8 @@ export default function TablesPage() {
 
           {/* --- BOTONES DE ACCIÓN --- */}
           <div className="flex gap-3" style={{ marginLeft: '10px', marginRight: '10px', marginBottom: '10px' }}>
-            <button 
-              onClick={() => setAddModalOpen(false)} 
+            <button
+              onClick={() => setAddModalOpen(false)}
               className="flex-1 font-bold uppercase tracking-widest rounded-2xl border border-[var(--border)] transition-colors hover:bg-white/5"
               style={{ color: 'var(--text-secondary)', fontSize: '13px', paddingTop: '16px', paddingBottom: '16px' }}
             >
