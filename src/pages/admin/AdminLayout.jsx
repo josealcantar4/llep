@@ -65,12 +65,12 @@ export default function AdminLayout() {
             end={end}
             className={navLinkClass}
             onClick={() => setSidebarOpen(false)}
-            style={{marginBottom: '3%'}}
+            style={{marginBottom: '1%'}}
           >
             {({ isActive }) => (
               <>
                 {/* 1. La animación de deslizamiento ahora está AQUÍ ADENTRO */}
-                <div style={{marginLeft: '3%', padding: '5%'}} className={`flex items-center gap-5 transition-transform duration-300 ${isActive ? '' : 'group-hover:translate-x-2'}`}>
+                <div style={{marginLeft: '3%', padding: '3%'}} className={`flex items-center gap-5 transition-transform duration-300 ${isActive ? '' : 'group-hover:translate-x-2'}`}>
                   <Icon size={24} className={isActive ? 'text-amber-400' : 'text-slate-400 group-hover:text-amber-400 transition-colors'} />
                   {label}
                 </div>
