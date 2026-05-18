@@ -10,8 +10,10 @@ import { db } from '../../firebase/config.js';
 import useAuthStore from '../../store/useAuthStore.js';
 import useFirestoreCollection from '../../hooks/useFirestoreCollection.js';
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
+import ExpenseDetailModal from './ExpenseDetailModal.jsx';
+import { getLocalDateString } from '../../utils/dateUtils.js';
 
-const today = new Date().toISOString().split('T')[0];
+const today = getLocalDateString();
 
 export default function ExpensesPage() {
   const { user } = useAuthStore();
@@ -21,6 +23,7 @@ export default function ExpensesPage() {
   const [concept, setConcept] = useState('');
   const [date,    setDate]    = useState(today);
   const [saving,  setSaving]  = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
 
   const { data: expenses, loading } = useFirestoreCollection('expenses', [
     where('shift', '==', today),
@@ -205,7 +208,12 @@ export default function ExpensesPage() {
                   {expenses.map((exp) => {
                     const d = exp.createdAt?.toDate?.() ?? new Date();
                     return (
-                      <tr key={exp.id} className="border-t transition-colors hover:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+                      <tr 
+                        key={exp.id} 
+                        className="border-t transition-colors hover:bg-white/5 cursor-pointer group/row" 
+                        style={{ borderColor: 'var(--border)' }}
+                        onClick={() => setSelectedExpense(exp)}
+                      >
                         <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
                           {d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                         </td>
@@ -225,7 +233,12 @@ export default function ExpensesPage() {
               </table>
             </div>
           )}
-        </div>
+          <ExpenseDetailModal 
+        isOpen={!!selectedExpense} 
+        onClose={() => setSelectedExpense(null)} 
+        expense={selectedExpense} 
+      />
+    </div>
       )}
     </div>
   );

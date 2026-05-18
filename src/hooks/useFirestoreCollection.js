@@ -31,7 +31,7 @@ export default function useFirestoreCollection(collectionName, constraints = [])
       }
     );
     return unsubscribe;
-  }, [collectionName]);
+  }, [collectionName, JSON.stringify(constraints)]);
 
   return { data, loading, error };
 }

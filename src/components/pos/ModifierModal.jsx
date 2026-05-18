@@ -15,11 +15,11 @@ import Modal from '../ui/Modal.jsx';
  * @param {Function} onConfirm - Callback({ notes, extras, qty })
  */
 export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
-  const [notes, setNotes]           = useState('');
-  const [extras, setExtras]         = useState([]);
-  const [extraName, setExtraName]   = useState('');
+  const [notes, setNotes] = useState('');
+  const [extras, setExtras] = useState([]);
+  const [extraName, setExtraName] = useState('');
   const [extraPrice, setExtraPrice] = useState('');
-  const [qty, setQty]               = useState(1);
+  const [qty, setQty] = useState(1);
   const [extraError, setExtraError] = useState('');
 
   const predefinedExtras = item?.extras || [];
@@ -58,9 +58,9 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
       setExtraError("Este extra ya fue agregado previamente.");
       return;
     }
-    
+
     setExtras((prev) => [...prev, { name: extraName.trim(), price }]);
-    setExtraName(''); 
+    setExtraName('');
     setExtraPrice('');
     setExtraError('');
   };
@@ -74,14 +74,14 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
   };
 
   const extrasTotal = extras.reduce((s, e) => s + e.price, 0);
-  const unitTotal   = (item?.price ?? 0) + extrasTotal;
+  const unitTotal = (item?.price ?? 0) + extrasTotal;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={resetAndClose}
       title={
-        <span style={{ marginLeft: '10px'}}>
+        <span style={{ marginLeft: '10px' }}>
           {item?.name ?? 'Personalizar ítem'}
         </span>
       }
@@ -91,21 +91,21 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
     >
       {/* Contenedor Principal */}
       <div
-        className="flex flex-col h-full"
+        className="flex flex-col h-[90vh]"
         style={{
-          background: 'radial-gradient(circle at top right, rgba(245,158,11,0.05) 0%, transparent 60%)'
+          background: 'radial-gradient(circle at top right, rgba(245,158,11,0.05) 0%, transparent 60%)',
         }}
       >
 
         {/* --- ÁREA SCROLLABLE --- */}
-        <div 
+        <div
           className="flex flex-col gap-8 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          style={{ maxHeight: '65vh', paddingBottom: '24px' }}
+          style={{ maxHeight: '60vh', paddingBottom: '5px' }}
         >
 
           {/* --- DESCRIPCIÓN DEL PLATILLO (Si existe) --- */}
           {item?.description && (
-            <div style={{ marginLeft: '5px', marginRight: '5px', marginTop: '10px', marginBottom: '-10px' }}>
+            <div style={{ marginLeft: '5px', marginRight: '5px', marginTop: '1px', marginBottom: '-10px' }}>
               <p className="text-[14.5px] leading-relaxed font-medium opacity-80" style={{ color: 'var(--text-secondary)' }}>
                 {item.description}
               </p>
@@ -115,7 +115,7 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
           {/* --- SECCIÓN: CANTIDAD Y PRECIO --- */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 border-b border-[var(--border)]">
             {/* Cantidad */}
-            <div className="flex flex-col text-left sm:text-left gap-2" style={{ marginBottom: '10px', marginTop: '10px' }}>
+            <div className="flex flex-col text-left sm:text-left gap-2" style={{ marginBottom: '5px', marginTop: '5px' }}>
               <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)', marginLeft: '5px' }}>
                 Cantidad
               </label>
@@ -167,7 +167,7 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
                       className="flex items-center justify-between px-5 py-4 rounded-2xl border transition-all text-left shadow-sm min-h-[64px]"
                       style={{
                         borderColor: isSelected ? 'var(--accent)' : 'var(--border)',
-                        background:  isSelected ? 'rgba(245,158,11,0.08)' : 'var(--bg-primary)',
+                        background: isSelected ? 'rgba(245,158,11,0.08)' : 'var(--bg-primary)',
                       }}
                     >
                       <div className="flex items-center gap-3">
@@ -190,14 +190,14 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
           )}
 
           {/* --- SECCIÓN: NOTAS DE COCINA --- */}
-          <div className="flex flex-col gap-3" style={{ marginLeft: '10px', marginRight: '10px' }}>
+          <div className="flex flex-col gap-3" style={{ marginLeft: '10px', marginRight: '5px' }}>
             <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-secondary)', marginLeft: '10px' }}>
               <StickyNote size={15} /> Notas de cocina
             </label>
             <div
               className="flex items-start gap-4 px-5 py-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] focus-within:ring-2 focus-within:ring-[var(--accent)] transition-all shadow-sm"
             >
-              <StickyNote size={18} className="shrink-0 mt-0.5" style={{ color: 'var(--text-secondary)' , marginLeft: '10px', marginTop: '12px' }} />
+              <StickyNote size={18} className="shrink-0 mt-0.5" style={{ color: 'var(--text-secondary)', marginLeft: '10px', marginTop: '12px' }} />
               <textarea
                 className="flex-1 bg-transparent outline-none text-[var(--text-primary)] text-[15px] leading-relaxed"
                 rows={2}
@@ -276,12 +276,12 @@ export default function ModifierModal({ isOpen, onClose, item, onConfirm }) {
             )}
           </div>
 
-        </div> 
+        </div>
         {/* --- FIN ÁREA SCROLLABLE --- */}
 
 
         {/* --- FOOTER FIJO --- */}
-        <div className="flex flex-col gap-6" style={{ paddingTop: '20px' }}>
+        <div className="flex flex-col gap-6" style={{ paddingTop: '2px' }}>
           {/* TOTAL FINAL */}
           <div className="px-7 py-6 rounded-[1.5rem] bg-[var(--bg-primary)] border border-[var(--accent)] border-opacity-30 flex items-center justify-between shadow-xl ring-1 ring-[var(--accent)] ring-opacity-10" style={{ marginLeft: '10px', marginRight: '10px' }}>
             <div className="flex flex-col gap-1">

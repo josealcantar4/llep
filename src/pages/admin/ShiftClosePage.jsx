@@ -4,25 +4,27 @@
 // Permite guardar el corte en Firestore y ver el historial.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useMemo, useState } from 'react';
-import { where, orderBy, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { where, orderBy, addDoc, collection, serverTimestamp, limit } from 'firebase/firestore';
 import { Scissors, TrendingUp, TrendingDown, Wallet, CheckCircle, History } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../../firebase/config.js';
 import useAuthStore from '../../store/useAuthStore.js';
 import useFirestoreCollection from '../../hooks/useFirestoreCollection.js';
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
+import { getLocalDateString } from '../../utils/dateUtils.js';
+import ShiftDetailModal from './ShiftDetailModal.jsx';
 
-const today = new Date().toISOString().split('T')[0];
+const today = getLocalDateString();
 
 function SummaryRow({ label, value, color, big }) {
   return (
-    <div className={`flex justify-between items-center ${big ? 'py-3 border-t' : 'py-2'}`}
+    <div className={`flex justify-between items-center gap-4 ${big ? 'py-5 border-t mt-4' : 'py-3'}`}
          style={{ borderColor: big ? 'var(--border)' : undefined }}>
-      <span className={big ? 'font-bold' : 'text-sm'}
-            style={{ color: big ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+      <span className={`${big ? 'font-black text-xs uppercase tracking-widest' : 'text-sm font-medium'} shrink-0`}
+            style={{ color: big ? 'var(--text-secondary)' : 'var(--text-secondary)' }}>
         {label}
       </span>
-      <span className={big ? 'font-black text-2xl' : 'font-semibold text-sm'}
+      <span className={`${big ? 'font-black text-3xl' : 'font-bold text-base'} truncate ml-2`}
             style={{ color: color ?? 'var(--text-primary)' }}>
         {value}
       </span>
@@ -34,16 +36,35 @@ export default function ShiftClosePage() {
   const { user } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [closed, setClosed] = useState(false);
+  const [viewingShift, setViewingShift] = useState(null);
 
-  // Consultas del turno actual
-  const { data: orders,   loading: loadingOrders   } = useFirestoreCollection('orders',   [where('shift', '==', today)]);
-  const { data: expenses, loading: loadingExpenses } = useFirestoreCollection('expenses', [where('shift', '==', today)]);
-  const { data: shifts,   loading: loadingShifts   } = useFirestoreCollection('shifts',   [where('date', '==', today)]);
+  // 1. Obtener el último corte de caja realizado
+  const { data: latestShifts, loading: loadingLatest } = useFirestoreCollection('shifts', [
+    orderBy('closedAt', 'desc'),
+    limit(1)
+  ]);
+
+  const lastShiftTimestamp = useMemo(() => {
+    if (latestShifts.length > 0 && latestShifts[0].closedAt) {
+      return latestShifts[0].closedAt;
+    }
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+    return yesterday;
+  }, [latestShifts]);
+
+  // 2. Consultas del turno actual (desde el último corte)
+  const { data: orders,   loading: loadingOrders   } = useFirestoreCollection('orders',   [where('createdAt', '>', lastShiftTimestamp)]);
+  const { data: expenses, loading: loadingExpenses } = useFirestoreCollection('expenses', [where('createdAt', '>', lastShiftTimestamp)]);
   
-  // Consulta de todo el historial de cortes
-  const { data: allShifts, loading: loadingAllShifts } = useFirestoreCollection('shifts', [orderBy('createdAt', 'desc')]);
+  // Mantenemos esta para saber si ya se hizo un corte con la fecha de HOY
+  const { data: shiftsToday, loading: loadingShiftsToday } = useFirestoreCollection('shifts', [where('date', '==', today)]);
+  
+  // 3. Consulta de todo el historial de cortes (para la tabla inferior)
+  const { data: allShifts, loading: loadingAllShifts } = useFirestoreCollection('shifts', [orderBy('closedAt', 'desc')]);
 
-  const alreadyClosed = shifts.length > 0;
+  // Ya no bloqueamos por "alreadyClosed", permitimos múltiples turnos por día
+  const hasOrders = orders.length > 0;
 
   const metrics = useMemo(() => {
     let cashSales = 0, cardSales = 0, transferSales = 0, totalTips = 0;
@@ -69,11 +90,10 @@ export default function ShiftClosePage() {
   }, [orders, expenses]);
 
   const fmt = (n) => `$${n.toFixed(2)}`;
-  const loading = loadingOrders || loadingExpenses || loadingShifts;
+  const loading = loadingLatest || loadingOrders || loadingExpenses || loadingShiftsToday || loadingAllShifts;
 
   /* ── Guardar corte ────────────────────────────────────────────────────── */
   const handleClose = async () => {
-    if (alreadyClosed) return;
     setSaving(true);
     try {
       await addDoc(collection(db, 'shifts'), {
@@ -91,7 +111,7 @@ export default function ShiftClosePage() {
         closedAt:       serverTimestamp(),
       });
       toast.success('Corte de caja registrado exitosamente ✅');
-      setClosed(true);
+      // No seteamos "closed" permanentemente para permitir otros turnos después
     } catch (err) {
       console.error(err);
       toast.error('Error al guardar el corte');
@@ -103,8 +123,8 @@ export default function ShiftClosePage() {
   if (loading) return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
-      <div>
+    <div className="space-y-10 animate-fadeIn max-w-5xl mx-auto px-4 pb-20">
+      <div className="mb-4">
         <h1 className="text-2xl font-black flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <Scissors size={24} color="var(--accent)" />
           Corte de Caja
@@ -114,9 +134,9 @@ export default function ShiftClosePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* ── Resumen de ventas ────────────────────────────────────────────── */}
-        <div className="pos-card p-5">
+        <div className="pos-card p-8">
             <h2 className="font-bold text-sm mb-4 flex items-center gap-2"
                 style={{ color: 'var(--text-primary)' }}>
               <TrendingUp size={16} color="var(--accent)" /> Ventas del día
@@ -130,7 +150,7 @@ export default function ShiftClosePage() {
         </div>
 
         {/* ── Egresos ──────────────────────────────────────────────────────── */}
-        <div className="pos-card p-5">
+        <div className="pos-card p-8">
             <h2 className="font-bold text-sm mb-4 flex items-center gap-2"
                 style={{ color: 'var(--text-primary)' }}>
               <TrendingDown size={16} color="#ef4444" /> Egresos de caja
@@ -147,10 +167,10 @@ export default function ShiftClosePage() {
             )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* ── Efectivo en cajón ─────────────────────────────────────────────── */}
           <div
-            className="pos-card p-6"
+            className="pos-card p-10"
             style={{
               border: `2px solid ${metrics.cashInDrawer >= 0 ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`,
               background: metrics.cashInDrawer >= 0 ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)',
@@ -176,31 +196,16 @@ export default function ShiftClosePage() {
           </div>
 
           {/* ── Botón de corte ─────────────────────────────────────────────────── */}
-          {(alreadyClosed || closed) ? (
-            <div className="flex items-center gap-3 p-5 rounded-xl"
-                 style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
-              <CheckCircle size={24} color="#10b981" />
-              <div>
-                <p className="font-bold text-base" style={{ color: '#10b981' }}>
-                  Corte registrado
-                </p>
-                <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  El corte de caja de hoy ya fue guardado.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <button
-              id="btn-close-shift"
-              onClick={handleClose}
-              disabled={saving || orders.length === 0}
-              className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg min-h-[64px]"
-              style={{ opacity: orders.length === 0 ? 0.5 : 1 }}
-            >
-              {saving ? <LoadingSpinner size="md" /> : <Scissors size={22} />}
-              Registrar Corte de Hoy
-            </button>
-          )}
+          <button
+            id="btn-close-shift"
+            onClick={handleClose}
+            disabled={saving || !hasOrders}
+            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg min-h-[64px]"
+            style={{ opacity: !hasOrders ? 0.5 : 1 }}
+          >
+            {saving ? <LoadingSpinner size="md" /> : <Scissors size={22} />}
+            {hasOrders ? 'Cerrar Turno Actual' : 'No hay ventas pendientes'}
+          </button>
 
           {orders.length === 0 && (
             <p className="text-sm text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
@@ -224,20 +229,25 @@ export default function ShiftClosePage() {
             No hay cortes en el historial.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-sm text-left min-w-[800px]">
               <thead style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <tr style={{ color: 'var(--text-secondary)' }}>
-                  <th className="px-5 py-3 font-medium">Fecha</th>
-                  <th className="px-5 py-3 font-medium">Ventas Totales</th>
-                  <th className="px-5 py-3 font-medium">Total Egresos</th>
-                  <th className="px-5 py-3 font-medium">Efectivo Cajón</th>
-                  <th className="px-5 py-3 font-medium text-right">Realizado por</th>
+                <tr className="text-xs uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
+                  <th className="px-6 py-4 font-black">Fecha</th>
+                  <th className="px-6 py-4 font-black">Ventas Totales</th>
+                  <th className="px-6 py-4 font-black">Total Egresos</th>
+                  <th className="px-6 py-4 font-black">Efectivo Cajón</th>
+                  <th className="px-6 py-4 font-black text-right">Realizado por</th>
                 </tr>
               </thead>
               <tbody>
                 {allShifts.map((shift) => (
-                  <tr key={shift.id} className="border-t transition-colors hover:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+                  <tr 
+                    key={shift.id} 
+                    className="border-t transition-colors hover:bg-white/5 cursor-pointer group/row" 
+                    style={{ borderColor: 'var(--border)' }}
+                    onClick={() => setViewingShift(shift)}
+                  >
                     <td className="px-5 py-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {shift.date}
                     </td>
@@ -260,7 +270,12 @@ export default function ShiftClosePage() {
           </div>
         )}
       </div>
-
+      
+      <ShiftDetailModal 
+        isOpen={!!viewingShift} 
+        onClose={() => setViewingShift(null)} 
+        shift={viewingShift} 
+      />
     </div>
   );
 }

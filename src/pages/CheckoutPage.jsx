@@ -15,6 +15,7 @@ import { db } from '../firebase/config.js';
 import useAuthStore from '../store/useAuthStore.js';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import TicketPrint from '../components/print/TicketPrint.jsx';
+import { getLocalDateString } from '../utils/dateUtils.js';
 
 const PAYMENT_METHODS = [
   { id: 'cash',     label: 'Efectivo',      Icon: Banknote,    color: '#10b981' },
@@ -120,7 +121,7 @@ export default function CheckoutPage() {
     if (!isValid) return;
     setProcessing(true);
     try {
-      const today    = new Date().toISOString().split('T')[0];
+      const today    = getLocalDateString();
       const payments = { cash: requiredCash, card: requiredCard, transfer: requiredTransfer };
       const orderData = {
         tableId, tableName: table.name, items, subtotal, tip, total,
@@ -138,8 +139,7 @@ export default function CheckoutPage() {
       });
       setCompletedOrder({ ...orderData, createdAt: { toDate: () => new Date() }, id: orderRef.id });
       toast.success('¡Pago registrado con éxito!');
-      setTimeout(() => { window.print(); }, 300);
-      setTimeout(() => navigate('/'), 2500);
+      // Ya no navegamos automáticamente, dejamos que el usuario decida en la pantalla de éxito
     } catch (e) {
       console.error(e);
       toast.error('Error al procesar el pago');
@@ -367,7 +367,62 @@ export default function CheckoutPage() {
     </section>
   ) : null;
 
-  /* ─── Render principal ────────────────────────────────────────────────── */
+  /* ── Pantalla de Éxito (Post-Pago) ─────────────────────────────────── */
+  if (completedOrder) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-[var(--bg-primary)] flex items-center justify-center p-6 overflow-y-auto">
+        <div className="max-w-md w-full animate-fadeIn flex flex-col items-center text-center">
+          <div className="w-24 h-24 rounded-full bg-emerald-500/20 flex items-center justify-center mb-8 ring-8 ring-emerald-500/5">
+            <CheckCircle size={48} className="text-emerald-500" />
+          </div>
+          
+          <h1 className="text-3xl font-black text-white mb-2">¡Venta Exitosa!</h1>
+          <p className="text-slate-400 mb-10">La orden para la <b>{completedOrder.tableName}</b> ha sido procesada y guardada correctamente.</p>
+          
+          <div className="w-full space-y-4">
+            <button
+              onClick={() => window.print()}
+              className="w-full py-5 rounded-[22px] bg-amber-500 text-[#0f172a] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20 active:scale-95 transition-all"
+            >
+              <Receipt size={22} />
+              Imprimir Ticket
+            </button>
+            
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-5 rounded-[22px] bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:bg-white/10 transition-all active:scale-95"
+            >
+              Ir a Mesas
+            </button>
+          </div>
+
+          <div className="mt-12 p-6 rounded-[24px] bg-white/[0.02] border border-white/5 w-full">
+            <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
+              <span>Resumen</span>
+              <span>#{completedOrder.id?.slice(-6).toUpperCase()}</span>
+            </div>
+            <div className="flex justify-between items-end">
+              <div className="text-left">
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">Total Cobrado</p>
+                <p className="text-3xl font-black text-amber-500">${completedOrder.total.toFixed(2)}</p>
+              </div>
+              <div className="text-right text-xs font-bold text-slate-400">
+                {completedOrder.paymentType === 'split' ? 'Pago Combinado' : `Pago: ${completedOrder.paymentMethod}`}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Portal de ticket para impresión (Movido aquí para que funcione) ── */}
+          {ReactDOM.createPortal(
+            <TicketPrint ref={ticketRef} order={completedOrder} />,
+            document.getElementById('ticket-print-root')
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Render principal (Formulario de Pago) ───────────────────────────── */
   return (
     <div
       style={{
@@ -485,11 +540,6 @@ export default function CheckoutPage() {
         </button>
       </div>
 
-      {/* ── Portal de ticket para impresión ── */}
-      {completedOrder && ReactDOM.createPortal(
-        <TicketPrint ref={ticketRef} order={completedOrder} />,
-        document.getElementById('ticket-print-root')
-      )}
     </div>
   );
 }

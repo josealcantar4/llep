@@ -135,9 +135,15 @@ html, body, #root {
 
   #ticket-print-root {
     display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 54mm;
-    margin: 0 auto;
+    margin: 0;
     padding: 2mm;
+    background: white !important;
+    color: black !important;
   }
 
   .ticket-divider {

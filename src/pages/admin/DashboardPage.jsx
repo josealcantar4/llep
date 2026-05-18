@@ -8,7 +8,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import ReactDOM from 'react-dom';
-import { where, orderBy } from 'firebase/firestore';
+import { where, orderBy, limit } from 'firebase/firestore';
 import {
   TrendingUp, Banknote, CreditCard, Smartphone, ShoppingBag, Printer
 } from 'lucide-react';
@@ -16,8 +16,9 @@ import useFirestoreCollection from '../../hooks/useFirestoreCollection.js';
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
 import TicketPrint from '../../components/print/TicketPrint.jsx';
 import OrderDetailModal from './OrderDetailModal.jsx';
+import { getLocalDateString } from '../../utils/dateUtils.js';
 
-const today = new Date().toISOString().split('T')[0];
+const today = getLocalDateString();
 
 const METHOD_COLORS = {
   cash:     '#10b981',
@@ -50,10 +51,30 @@ function KpiCard({ label, value, Icon, color, sub }) {
 }
 
 export default function DashboardPage() {
-  const { data: orders, loading } = useFirestoreCollection('orders', [
-    where('shift', '==', today),
+  // 1. Obtener el último corte de caja realizado
+  const { data: latestShifts, loading: loadingShifts } = useFirestoreCollection('shifts', [
+    orderBy('closedAt', 'desc'),
+    limit(1)
+  ]);
+
+  // Calculamos el timestamp del último corte (o hace 24h si no hay cortes)
+  const lastShiftTimestamp = useMemo(() => {
+    if (latestShifts.length > 0 && latestShifts[0].closedAt) {
+      return latestShifts[0].closedAt;
+    }
+    // Si no hay cortes, retrocedemos 24 horas
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+    return yesterday;
+  }, [latestShifts]);
+
+  // 2. Obtener órdenes realizadas DESPUÉS del último corte
+  const { data: orders, loading: loadingOrders } = useFirestoreCollection('orders', [
+    where('createdAt', '>', lastShiftTimestamp),
     orderBy('createdAt', 'desc'),
   ]);
+
+  const loading = loadingShifts || loadingOrders;
 
   const [selectedOrder, setSelectedOrder] = React.useState(null);
   const [viewOrder, setViewOrder] = React.useState(null);
@@ -64,7 +85,7 @@ export default function DashboardPage() {
     // Pequeño delay para asegurar que el portal renderice el ticket antes de imprimir
     setTimeout(() => {
       window.print();
-    }, 300);
+    }, 700);
   };
 
   /* ── Calcular métricas ──────────────────────────────────────────────── */
