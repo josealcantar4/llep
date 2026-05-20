@@ -3,204 +3,190 @@
 // Modal detallado para visualizar un egreso específico.
 // Altura controlada con Scroll interno y Botón de Acción Fijo en la Base.
 // ─────────────────────────────────────────────────────────────────────────────
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar, User, Clock, Hash, FileText, DollarSign,
-  TrendingDown, ArrowLeft
+  TrendingDown, ArrowLeft, X
 } from 'lucide-react';
-import Modal from '../../components/ui/Modal.jsx';
 
 export default function ExpenseDetailModal({ isOpen, onClose, expense }) {
-  if (!expense) return null;
+  // Cerrar con Escape y bloquear scroll del body
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => { 
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = ''; 
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !expense) return null;
 
   const date = expense.createdAt?.toDate?.() ?? new Date();
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Detalle de Egreso"
-      maxWidth="max-w-xl"
-      showClose={false}
+  return createPortal(
+    /* ── Overlay ── */
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+        animation: 'fadeIn 0.2s ease',
+      }}
     >
-      {/* Contenedor Maestro: Limitamos su altura máxima al 75% del alto de la pantalla (75vh)
-        y lo configuramos como un Flexbox vertical rígido para separar el Scroll del Botón Fijo.
-      */}
+      {/* ── Panel Maestro (Flexbox Vertical) ── */}
       <div
-        className="flex flex-col animate-fadeIn"
+        onClick={(e) => e.stopPropagation()}
         style={{
-          maxHeight: '80vh',
-          height: '100%',
-          display: 'flex',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '28px',
+          width: '100%',
+          maxWidth: '560px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+          animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1)',
+          display: 'flex', 
           flexDirection: 'column',
+          maxHeight: '85vh', // Límite de altura para activar el scroll interno
+          overflow: 'hidden' // Cortar las esquinas y contener el scroll
         }}
       >
+        
+        {/* ── HEADER FIJO SUPERIOR ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 36px 20px 36px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <TrendingDown size={20} color="#ef4444" />
+            Detalle de Egreso
+          </h2>
+          <button
+            onClick={onClose}
+            className="btn-ghost"
+            style={{ borderRadius: '12px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title="Cerrar"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-        {/* ── ZONA CON SCROLL INDEPENDIENTE ───────────────────────────────── */}
-        <div
-          className="flex-1 custom-scrollbar"
-          style={{
-            overflowY: 'auto',          /* 👈 Habilita el scroll vertical solo aquí */
-            padding: '32px 40px 16px 40px', /* Bajamos el padding inferior para no separar de más */
+        {/* ── ZONA DE SCROLL INTERNO ────────────────────────────────────── */}
+        <div 
+          className="custom-scrollbar"
+          style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            padding: '28px 36px' 
           }}
         >
-          {/* ── HEADER INFO CARDS ─────────────────────────────────────────── */}
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2"
-            style={{ gap: '16px', marginBottom: '32px' }}
-          >
+          
+          {/* HEADER INFO CARDS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
             {/* Tarjeta de Monto */}
-            <div
-              className="bg-white/5 border border-white/5 flex items-center"
-              style={{ padding: '20px', borderRadius: '24px', gap: '16px' }}
-            >
-              <div
-                className="bg-red-500/10 flex items-center justify-center text-red-500 shadow-inner"
-                style={{ width: '48px', height: '48px', borderRadius: '16px', flexShrink: 0 }}
-              >
-                <TrendingDown size={24} style={{ flexShrink: 0 }} />
+            <div style={{
+              display: 'flex', gap: '16px', alignItems: 'center',
+              padding: '20px', borderRadius: '24px',
+              background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                <TrendingDown size={24} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <p
-                  className="font-black uppercase text-white/40"
-                  style={{ fontSize: '10px', letterSpacing: '0.2em', marginBottom: '4px', whiteSpace: 'nowrap' }}
-                >
+                <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-secondary)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                   Monto Salida
                 </p>
-                <p
-                  className="font-black text-red-500"
-                  style={{ fontSize: '24px', lineHeight: '1', whiteSpace: 'nowrap' }}
-                >
+                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#ef4444', lineHeight: 1, whiteSpace: 'nowrap' }}>
                   -${expense.amount.toFixed(2)}
                 </p>
               </div>
             </div>
 
             {/* Tarjeta de ID */}
-            <div
-              className="bg-white/5 border border-white/5 flex items-center"
-              style={{ padding: '20px', borderRadius: '24px', gap: '16px' }}
-            >
-              <div
-                className="bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-inner"
-                style={{ width: '48px', height: '48px', borderRadius: '16px', flexShrink: 0 }}
-              >
-                <Hash size={24} style={{ flexShrink: 0 }} />
+            <div style={{
+              display: 'flex', gap: '16px', alignItems: 'center',
+              padding: '20px', borderRadius: '24px',
+              background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                <Hash size={24} />
               </div>
               <div style={{ minWidth: 0, width: '100%' }}>
-                <p
-                  className="font-black uppercase text-white/40"
-                  style={{ fontSize: '10px', letterSpacing: '0.2em', marginBottom: '4px', whiteSpace: 'nowrap' }}
-                >
+                <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-secondary)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                   ID Egreso
                 </p>
-                <p
-                  className="font-black text-white"
-                  style={{ fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
+                <p style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   #{expense.id?.slice(-8).toUpperCase() || 'N/A'}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* ── CONCEPT AREA ─────────────────────────────────────────────── */}
-          <div
-            className="bg-white/[0.03] border border-white/5"
-            style={{ padding: '28px', borderRadius: '28px', marginBottom: '36px' }}
-          >
-            <div className="flex items-center" style={{ gap: '12px', marginBottom: '16px' }}>
-              <div
-                className="bg-amber-500/10 flex items-center justify-center text-amber-500"
-                style={{ width: '36px', height: '36px', borderRadius: '12px', flexShrink: 0 }}
-              >
-                <FileText size={18} style={{ flexShrink: 0 }} />
+          {/* CONCEPT AREA */}
+          <div style={{ padding: '24px', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(245,158,11,0.1)', color: 'var(--accent)' }}>
+                <FileText size={18} />
               </div>
-              <p
-                className="font-black uppercase text-white/40"
-                style={{ fontSize: '11px', letterSpacing: '0.2em' }}
-              >
+              <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-secondary)' }}>
                 Concepto del Egreso
               </p>
             </div>
-            <p
-              className="font-bold text-white leading-relaxed"
-              style={{ fontSize: '18px', wordBreak: 'break-word' }}
-            >
+            <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.5 }}>
               {expense.concept || 'Sin concepto registrado.'}
             </p>
           </div>
 
-          {/* ── META INFO STRIP ───────────────────────────────────────────── */}
-          <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-            <div className="flex items-center justify-between font-bold border-b border-white/5" style={{ padding: '16px 0' }}>
-              <div className="flex items-center text-white/40" style={{ gap: '12px' }}>
-                <Calendar size={18} className="text-amber-500" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>Fecha de Registro</span>
+          {/* META INFO STRIP */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                <Calendar size={18} color="var(--accent)" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Fecha de Registro</span>
               </div>
-              <span className="text-white text-right" style={{ fontSize: '14px', marginLeft: '16px' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>
                 {date.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
               </span>
             </div>
 
-            <div className="flex items-center justify-between font-bold border-b border-white/5" style={{ padding: '16px 0' }}>
-              <div className="flex items-center text-white/40" style={{ gap: '12px' }}>
-                <Clock size={18} className="text-amber-500" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>Hora de Registro</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                <Clock size={18} color="var(--accent)" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Hora de Registro</span>
               </div>
-              <span className="text-white text-right" style={{ fontSize: '14px', marginLeft: '16px' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>
                 {date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
 
-            <div className="flex items-center justify-between font-bold border-b border-white/5" style={{ padding: '16px 0' }}>
-              <div className="flex items-center text-white/40" style={{ gap: '12px' }}>
-                <User size={18} className="text-amber-500" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>Registrado Por</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                <User size={18} color="var(--accent)" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Registrado Por</span>
               </div>
-              <span className="text-white text-right" style={{ fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginLeft: '16px', maxWidth: '150px' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                 {expense.registeredByName || 'Usuario Desconocido'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between font-bold border-b border-white/5" style={{ padding: '16px 0' }}>
-              <div className="flex items-center text-white/40" style={{ gap: '12px' }}>
-                <DollarSign size={18} className="text-amber-500" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>Vínculo a Turno</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', color: 'var(--text-secondary)' }}>
+                <DollarSign size={18} color="var(--accent)" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Vínculo a Turno</span>
               </div>
-              <span className="text-white/60 text-right" style={{ fontSize: '14px', marginLeft: '16px' }}>
-                {expense.shift ? `Shift ${expense.shift}` : 'N/A'}
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', textAlign: 'right' }}>
+                {expense.shift ? `Corte ${expense.shift}` : 'N/A'}
               </span>
             </div>
           </div>
-        </div>
 
-        {/* ── FIJO ABAJO: BOTÓN DE ACCIÓN INDEPENDIENTE ───────────────────── */}
-        <div
-          className=" relative"
-          style={{
-            padding: '10px 10px',
-          }}
-
-        >
-          <button
-            onClick={onClose}
-            className="w-full flex items-center justify-center bg-white/5 border border-white/10 text-white font-black uppercase hover:bg-white/10 transition-all active:scale-95"
-            style={{
-              padding: '18px',
-              borderRadius: '20px',
-              gap: '12px',
-              fontSize: '12px',
-              letterSpacing: '0.3em'
-            }}
-          >
-            <ArrowLeft size={18} />
-            <span>Cerrar Detalle</span>
-          </button>
         </div>
 
       </div>
-    </Modal>
+    </div>,
+    document.body
   );
 }

@@ -1,274 +1,26 @@
 // src/pages/admin/MenuAdminPage.jsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Gestión completa del menú: categorías e ítems.
-// CRUD de platillos con modificadores (extras) e imagen URL.
+// Los formularios ahora se muestran como modales portals.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState } from 'react';
 import {
-  addDoc, updateDoc, deleteDoc,
-  doc, collection, serverTimestamp, orderBy,
+  updateDoc, deleteDoc,
+  doc, orderBy,
 } from 'firebase/firestore';
 import {
   UtensilsCrossed, Plus, Pencil, Trash2,
   ToggleLeft, ToggleRight, ChevronDown, ChevronRight,
-  Image as ImageIcon, ArrowLeft, Tag
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db } from '../../firebase/config.js';
 import useFirestoreCollection from '../../hooks/useFirestoreCollection.js';
 import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
+import CategoryModal from './CategoryModal.jsx';
+import ItemModal from './ItemModal.jsx';
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Formulario de Categoría
-══════════════════════════════════════════════════════════════════════════ */
-function CategoryForm({ initial, onSave, onCancel }) {
-  const [name,  setName]  = useState(initial?.name  ?? '');
-  const [emoji, setEmoji] = useState(initial?.emoji ?? '🍽️');
-  const [busy,  setBusy]  = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) return toast.error('Escribe el nombre de la categoría');
-    setBusy(true);
-    try {
-      if (initial?.id) {
-        await updateDoc(doc(db, 'menuCategories', initial.id), { name: name.trim(), emoji });
-        toast.success('Categoría actualizada');
-      } else {
-        await addDoc(collection(db, 'menuCategories'), {
-          name: name.trim(), emoji, order: Date.now(), createdAt: serverTimestamp(),
-        });
-        toast.success('Categoría creada');
-      }
-      onSave();
-    } catch (err) { console.error(err); toast.error('Error al guardar'); }
-    finally { setBusy(false); }
-  };
-
-  return (
-    <div className="pos-card p-6 animate-slideUp max-w-xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          {initial?.id ? <Pencil size={20} color="var(--accent)" /> : <Plus size={20} color="var(--accent)" />}
-          {initial?.id ? 'Editar Categoría' : 'Nueva Categoría'}
-        </h2>
-        <button onClick={onCancel} className="btn-ghost flex items-center gap-2 text-sm px-3 py-1.5">
-          <ArrowLeft size={16} /> Volver
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="flex gap-4">
-          <div className="w-24">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Emoji
-            </label>
-            <input className="pos-input text-center text-2xl py-3" value={emoji}
-                   onChange={(e) => setEmoji(e.target.value)} maxLength={2} />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Nombre *
-            </label>
-            <input className="pos-input py-3 font-semibold" placeholder="Ej: Entradas, Bebidas..."
-                   value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
-          </div>
-        </div>
-        <div className="pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-          <button type="submit" disabled={busy} className="btn-primary w-full py-4 flex items-center justify-center gap-2">
-            {busy ? <LoadingSpinner size="sm" /> : <SaveIcon />}
-            {initial?.id ? 'Guardar Cambios' : 'Crear Categoría'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function SaveIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   Formulario de Ítem del Menú
-══════════════════════════════════════════════════════════════════════════ */
-function ItemForm({ initial, categories, onSave, onCancel }) {
-  const [name,       setName]       = useState(initial?.name        ?? '');
-  const [price,      setPrice]      = useState(initial?.price?.toString() ?? '');
-  const [desc,       setDesc]       = useState(initial?.description  ?? '');
-  const [imageUrl,   setImageUrl]   = useState(initial?.imageUrl     ?? '');
-  const [categoryId, setCategoryId] = useState(initial?.categoryId  ?? categories[0]?.id ?? '');
-  const [extras,     setExtras]     = useState(initial?.extras      ?? []);
-  const [busy,       setBusy]       = useState(false);
-
-  const addExtra = () => setExtras([...extras, { name: '', price: 0 }]);
-  const updateExtra = (index, field, value) => {
-    const newExtras = [...extras];
-    newExtras[index][field] = value;
-    setExtras(newExtras);
-  };
-  const removeExtra = (index) => setExtras(extras.filter((_, i) => i !== index));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const p = parseFloat(price);
-    if (!name.trim())           return toast.error('Escribe el nombre del platillo');
-    if (isNaN(p) || p < 0)      return toast.error('Ingresa un precio base válido');
-    if (!categoryId)            return toast.error('Selecciona una categoría');
-
-    // Limpiar extras vacíos
-    const cleanExtras = extras.filter(ex => ex.name.trim() !== '');
-
-    setBusy(true);
-    try {
-      const payload = { 
-        name: name.trim(), 
-        price: p, 
-        description: desc.trim(), 
-        imageUrl: imageUrl.trim(),
-        categoryId, 
-        extras: cleanExtras,
-        available: initial?.id ? initial.available : true 
-      };
-
-      if (initial?.id) {
-        await updateDoc(doc(db, 'menuItems', initial.id), payload);
-        toast.success('Platillo actualizado');
-      } else {
-        await addDoc(collection(db, 'menuItems'), { ...payload, createdAt: serverTimestamp() });
-        toast.success('Platillo creado');
-      }
-      onSave();
-    } catch (err) { console.error(err); toast.error('Error al guardar'); }
-    finally { setBusy(false); }
-  };
-
-  return (
-    <div className="pos-card p-6 animate-slideUp max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          {initial?.id ? <Pencil size={20} color="var(--accent)" /> : <UtensilsCrossed size={20} color="var(--accent)" />}
-          {initial?.id ? 'Editar Platillo' : 'Nuevo Platillo'}
-        </h2>
-        <button onClick={onCancel} className="btn-ghost flex items-center gap-2 text-sm px-3 py-1.5">
-          <ArrowLeft size={16} /> Volver
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Categoría *
-            </label>
-            <select className="pos-input py-3" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}
-                    style={{ background: 'var(--bg-primary)', cursor: 'pointer' }} required>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Nombre del Platillo *
-            </label>
-            <input className="pos-input py-3 font-semibold" placeholder="Ej: Hamburguesa Clásica"
-                   value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Precio Base *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-secondary)' }}>$</span>
-              <input className="pos-input py-3 pl-7 font-bold text-accent" type="number" min="0" step="0.01"
-                     placeholder="0.00" value={price} onChange={(e) => setPrice(e.target.value)} required />
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Descripción (Opcional)
-            </label>
-            <textarea className="pos-input resize-none" rows="2" placeholder="Ingredientes, preparación, etc..."
-                   value={desc} onChange={(e) => setDesc(e.target.value)} />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              URL de la Imagen (Opcional)
-            </label>
-            <div className="flex gap-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 border" style={{ borderColor: 'var(--border)' }}>
-                {imageUrl ? <img src={imageUrl} alt="preview" className="w-full h-full object-cover rounded-lg" onError={(e) => e.target.style.display='none'}/> : <ImageIcon size={16} color="var(--text-secondary)" />}
-              </div>
-              <input className="pos-input flex-1" placeholder="https://ejemplo.com/imagen.jpg" type="url"
-                     value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-            </div>
-          </div>
-
-          {/* ── Modificadores / Extras ── */}
-          <div className="md:col-span-2 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  <Tag size={14} color="var(--accent)" />
-                  Modificadores / Extras
-                </h3>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  Opciones extra para este platillo (Ej: Queso extra +$15, Sin cebolla +$0)
-                </p>
-              </div>
-              <button type="button" onClick={addExtra} className="btn-ghost text-xs px-2 py-1 flex items-center gap-1">
-                <Plus size={12} /> Agregar Opción
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {extras.length === 0 && (
-                <div className="p-4 rounded-xl text-center text-xs border border-dashed" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                  No hay extras configurados
-                </div>
-              )}
-              {extras.map((extra, idx) => (
-                <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-center p-4 rounded-xl bg-black/20 border border-white/5">
-                  <input className="pos-input flex-1 min-w-[150px]" placeholder="Nombre (Ej: Doble carne)" 
-                         value={extra.name} onChange={e => updateExtra(idx, 'name', e.target.value)} required />
-                  <div className="relative w-32 flex-shrink-0">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">+$</span>
-                    <input type="number" className="pos-input pl-8" min="0" step="0.01" placeholder="0.00"
-                           value={extra.price} onChange={e => updateExtra(idx, 'price', parseFloat(e.target.value) || 0)} required />
-                  </div>
-                  <div className="flex w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 mt-2 md:mt-0 border-white/5">
-                    <button type="button" onClick={() => removeExtra(idx)} 
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-red-500 hover:bg-red-500/15 transition-colors border border-red-500/20 w-full md:w-auto px-4 md:px-0">
-                      <Trash2 size={18} /> <span className="md:hidden ml-2 font-bold">Eliminar</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-        
-        <div className="pt-4 mt-6 border-t" style={{ borderColor: 'var(--border)' }}>
-          <button type="submit" disabled={busy} className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-base">
-            {busy ? <LoadingSpinner size="sm" /> : <SaveIcon />}
-            {initial?.id ? 'Guardar Cambios del Platillo' : 'Crear Nuevo Platillo'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   Página principal (Listado y Toggle)
+   Página principal
 ══════════════════════════════════════════════════════════════════════════ */
 export default function MenuAdminPage() {
   const { data: categories, loading: loadingCats } =
@@ -276,16 +28,27 @@ export default function MenuAdminPage() {
   const { data: items, loading: loadingItems } =
     useFirestoreCollection('menuItems');
 
-  // Estado para controlar qué formulario mostrar: null = Lista, 'cat' = Formulario Categoría, 'item' = Formulario Platillo
-  const [formType, setFormType] = useState(null);
-  
-  // Datos para editar
-  const [editCat,   setEditCat]   = useState(null);
-  const [editItem,  setEditItem]  = useState(null);
+  // Modales
+  const [showCatModal,  setShowCatModal]  = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
 
-  // Categorías expandidas en la vista de lista
+  // Datos para editar
+  const [editCat,  setEditCat]  = useState(null);
+  const [editItem, setEditItem] = useState(null);
+
+  // Categorías expandidas
   const [expanded, setExpanded] = useState({});
   const toggleExpand = (id) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
+
+  /* ── Helpers para abrir modales ──────────────────────────────────────── */
+  const openNewCat  = () => { setEditCat(null);  setShowCatModal(true);  };
+  const openEditCat = (cat) => { setEditCat(cat); setShowCatModal(true); };
+
+  const openNewItem  = (categoryId) => { setEditItem(categoryId ? { categoryId } : null); setShowItemModal(true); };
+  const openEditItem = (item) => { setEditItem(item); setShowItemModal(true); };
+
+  const closeCatModal  = () => { setShowCatModal(false);  setEditCat(null);  };
+  const closeItemModal = () => { setShowItemModal(false); setEditItem(null); };
 
   /* ── Eliminar categoría ────────────────────────────────────────────── */
   const deleteCategory = async (cat) => {
@@ -314,199 +77,366 @@ export default function MenuAdminPage() {
     } catch { toast.error('Error al actualizar'); }
   };
 
-  const closeForm = () => {
-    setFormType(null);
-    setEditCat(null);
-    setEditItem(null);
-  };
-
   if (loadingCats || loadingItems) return (
-    <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+      <LoadingSpinner size="lg" />
+    </div>
   );
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
-      {/* ── Header ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div
+      className="animate-fadeIn"
+      style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 24px 64px' }}
+    >
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: '16px',
+          marginBottom: '40px',
+          paddingBottom: '28px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
+          <h1
+            style={{
+              fontSize: '2rem',
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              color: 'var(--text-primary)',
+              margin: 0,
+            }}
+          >
             Gestión de Menú
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 500, marginTop: '6px', color: 'var(--text-secondary)', opacity: 0.7 }}>
             {categories.length} categorías · {items.length} platillos en total
           </p>
         </div>
-        {!formType && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setEditCat(null); setFormType('cat'); }}
-              className="btn-ghost text-sm flex items-center gap-1.5 px-4"
-            >
-              <Plus size={16} /> Categoría
-            </button>
-            <button
-              onClick={() => { setEditItem(null); setFormType('item'); }}
-              disabled={categories.length === 0}
-              className="btn-primary text-sm flex items-center gap-1.5 px-4"
-              title={categories.length === 0 ? 'Crea una categoría primero' : ''}
-            >
-              <Plus size={16} /> Nuevo Platillo
-            </button>
-          </div>
-        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={openNewCat}
+            className="btn-ghost"
+            style={{
+              padding: '12px 22px',
+              borderRadius: '16px',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <Plus size={18} /> Categoría
+          </button>
+          <button
+            onClick={() => openNewItem(null)}
+            disabled={categories.length === 0}
+            className="btn-primary"
+            style={{
+              padding: '12px 22px',
+              borderRadius: '16px',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+            title={categories.length === 0 ? 'Crea una categoría primero' : ''}
+          >
+            <Plus size={18} /> Nuevo Platillo
+          </button>
+        </div>
       </div>
 
-      {/* ── Área Dinámica: Lista o Formulario ────────────────────────── */}
-      {formType === 'cat' ? (
-        <CategoryForm initial={editCat} onSave={closeForm} onCancel={closeForm} />
-      ) : formType === 'item' ? (
-        <ItemForm initial={editItem} categories={categories} onSave={closeForm} onCancel={closeForm} />
-      ) : (
-        /* ── Lista por categoría ──────────────────────────────────────── */
-        categories.length === 0 ? (
-          <div className="pos-card p-12 flex flex-col items-center gap-4 animate-fadeIn">
-            <div className="p-5 rounded-full" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <UtensilsCrossed size={48} color="var(--text-secondary)" />
-            </div>
-            <p className="text-base" style={{ color: 'var(--text-secondary)' }}>Aún no hay categorías en tu menú.</p>
-            <button onClick={() => { setEditCat(null); setFormType('cat'); }} className="btn-primary mt-2 flex items-center gap-2">
-              <Plus size={18} /> Crear Primera Categoría
-            </button>
+      {/* ── Lista de categorías ─────────────────────────────────────────── */}
+      {categories.length === 0 ? (
+        /* Estado vacío */
+        <div
+          className="bg-[var(--bg-secondary)] border border-[var(--border)]"
+          style={{
+            borderRadius: '28px',
+            padding: '64px 48px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            animation: 'fadeIn 0.3s ease',
+          }}
+        >
+          <div style={{ padding: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }}>
+            <UtensilsCrossed size={48} color="var(--text-secondary)" />
           </div>
-        ) : (
-          <div className="space-y-4 animate-fadeIn">
-            {categories.map((cat) => {
-              const catItems = items.filter((i) => i.categoryId === cat.id);
-              const isOpen   = expanded[cat.id] ?? true;
-              return (
-                <div key={cat.id} className="pos-card overflow-hidden">
-                  {/* Header categoría */}
-                  <div
-                    className="flex items-center gap-4 p-5 cursor-pointer hover:bg-white/5 transition-colors border-b"
-                    style={{ borderColor: isOpen ? 'var(--border)' : 'transparent' }}
-                    onClick={() => toggleExpand(cat.id)}
-                  >
-                    <span className="text-2xl">{cat.emoji}</span>
-                    <span className="font-bold text-lg flex-1" style={{ color: 'var(--text-primary)' }}>
-                      {cat.name}
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full font-bold mr-2"
-                          style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)' }}>
-                      {catItems.length} platillos
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditCat(cat); setFormType('cat'); }}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
-                      title="Editar Categoría"
-                    ><Pencil size={18} color="var(--text-secondary)" /></button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteCategory(cat); }}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-500/10 transition-colors"
-                      title="Eliminar Categoría"
-                    ><Trash2 size={18} color="#ef4444" /></button>
-                    <div className="p-1 ml-2">
-                      {isOpen
-                        ? <ChevronDown size={20} color="var(--text-secondary)" />
-                        : <ChevronRight size={20} color="var(--text-secondary)" />}
-                    </div>
-                  </div>
+          <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-secondary)', opacity: 0.6 }}>
+            Aún no hay categorías en tu menú.
+          </p>
+          <button
+            onClick={openNewCat}
+            className="btn-primary"
+            style={{ padding: '14px 28px', borderRadius: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}
+          >
+            <Plus size={20} /> Crear Primera Categoría
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {categories.map((cat) => {
+            const catItems = items.filter((i) => i.categoryId === cat.id);
+            const isOpen   = expanded[cat.id] ?? true;
 
-                  {/* Platillos */}
-                  {isOpen && (
-                    <div className="bg-black/20">
-                      {catItems.length === 0 ? (
-                        <div className="px-6 py-8 flex flex-col items-center justify-center gap-2">
-                          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                            No hay platillos en esta categoría.
-                          </p>
-                          <button onClick={() => { setEditItem({ categoryId: cat.id }); setFormType('item'); }} className="text-xs text-accent hover:underline">
-                            + Agregar platillo
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                          {catItems.map((item) => (
-                            <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/5 transition-colors">
-                              {/* Imagen Miniatura */}
-                              <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0" style={{ border: '1px solid var(--border)' }}>
-                                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" /> : <UtensilsCrossed size={16} color="var(--text-secondary)" />}
-                              </div>
-                              
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold truncate"
-                                        style={{ color: item.available ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                                    {item.name}
+            return (
+              <div
+                key={cat.id}
+                className="bg-[var(--bg-secondary)] border border-[var(--border)]"
+                style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+              >
+                {/* ── Header de categoría ── */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '20px 28px',
+                    cursor: 'pointer',
+                    borderBottom: isOpen ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.15s',
+                  }}
+                  className="hover:bg-white/5"
+                  onClick={() => toggleExpand(cat.id)}
+                >
+                  <span style={{ fontSize: '1.5rem' }}>{cat.emoji}</span>
+                  <span style={{ fontWeight: 700, fontSize: '1.05rem', flex: 1, color: 'var(--text-primary)' }}>
+                    {cat.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.7rem', fontWeight: 700,
+                      padding: '4px 10px', borderRadius: '999px',
+                      background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)',
+                      marginRight: '4px',
+                    }}
+                  >
+                    {catItems.length} platillos
+                  </span>
+
+                  {/* Editar categoría */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditCat(cat); }}
+                    style={{
+                      minWidth: '40px', minHeight: '40px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: '10px', background: 'transparent',
+                      border: 'none', cursor: 'pointer', transition: 'background 0.15s',
+                    }}
+                    className="hover:bg-white/10"
+                    title="Editar Categoría"
+                  >
+                    <Pencil size={17} color="var(--text-secondary)" />
+                  </button>
+
+                  {/* Eliminar categoría */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteCategory(cat); }}
+                    style={{
+                      minWidth: '40px', minHeight: '40px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: '10px', background: 'transparent',
+                      border: 'none', cursor: 'pointer', transition: 'background 0.15s',
+                    }}
+                    className="hover:bg-red-500/10"
+                    title="Eliminar Categoría"
+                  >
+                    <Trash2 size={17} color="#ef4444" />
+                  </button>
+
+                  <div style={{ paddingLeft: '8px' }}>
+                    {isOpen
+                      ? <ChevronDown size={20} color="var(--text-secondary)" />
+                      : <ChevronRight size={20} color="var(--text-secondary)" />}
+                  </div>
+                </div>
+
+                {/* ── Platillos ── */}
+                {isOpen && (
+                  <div style={{ background: 'rgba(0,0,0,0.15)' }}>
+                    {catItems.length === 0 ? (
+                      <div
+                        style={{
+                          padding: '36px 28px',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+                        }}
+                      >
+                        <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', opacity: 0.6 }}>
+                          No hay platillos en esta categoría.
+                        </p>
+                        <button
+                          onClick={() => openNewItem(cat.id)}
+                          style={{
+                            fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent)',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                          }}
+                          className="hover:underline"
+                        >
+                          + Agregar platillo
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ borderColor: 'var(--border)' }} className="divide-y">
+                        {catItems.map((item) => (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '16px',
+                              padding: '14px 28px', transition: 'background 0.15s',
+                            }}
+                            className="hover:bg-white/5"
+                          >
+                            {/* Miniatura */}
+                            <div
+                              style={{
+                                width: '48px', height: '48px', borderRadius: '10px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--border)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                overflow: 'hidden', flexShrink: 0,
+                              }}
+                            >
+                              {item.imageUrl
+                                ? <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                : <UtensilsCrossed size={16} color="var(--text-secondary)" />
+                              }
+                            </div>
+
+                            {/* Info */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span
+                                  style={{
+                                    fontSize: '0.95rem', fontWeight: 700,
+                                    color: item.available ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                  }}
+                                >
+                                  {item.name}
+                                </span>
+                                {!item.available && (
+                                  <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                    Agotado
                                   </span>
-                                  {!item.available && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider"
-                                          style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                                      Agotado
-                                    </span>
-                                  )}
-                                  {(item.extras?.length > 0) && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider"
-                                          style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent)' }}>
-                                      +{item.extras.length} Modificadores
-                                    </span>
-                                  )}
-                                </div>
-                                {item.description && (
-                                  <p className="text-xs truncate mt-1" style={{ color: 'var(--text-secondary)' }}>
-                                    {item.description}
-                                  </p>
+                                )}
+                                {(item.extras?.length > 0) && (
+                                  <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(245,158,11,0.1)', color: 'var(--accent)' }}>
+                                    +{item.extras.length} Modificadores
+                                  </span>
                                 )}
                               </div>
-                              <span className="font-black text-base flex-shrink-0" style={{ color: 'var(--accent)' }}>
-                                ${item.price.toFixed(2)}
-                              </span>
-                              
-                              <div className="flex items-center gap-1 ml-4 border-l pl-4" style={{ borderColor: 'var(--border)' }}>
-                                {/* Toggle disponibilidad */}
-                                <button
-                                  onClick={() => toggleAvailable(item)}
-                                  title={item.available ? 'Marcar Agotado' : 'Marcar Disponible'}
-                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
-                                >
-                                  {item.available
-                                    ? <ToggleRight size={24} color="var(--accent)" />
-                                    : <ToggleLeft  size={24} color="var(--text-secondary)" />}
-                                </button>
-                                <button
-                                  onClick={() => { setEditItem(item); setFormType('item'); }}
-                                  title="Editar Platillo"
-                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
-                                ><Pencil size={18} color="var(--text-secondary)" /></button>
-                                <button
-                                  onClick={() => deleteItem(item)}
-                                  title="Eliminar Platillo"
-                                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-500/10 transition-colors"
-                                ><Trash2 size={18} color="#ef4444" /></button>
-                              </div>
+                              {item.description && (
+                                <p style={{ fontSize: '0.75rem', marginTop: '3px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {item.description}
+                                </p>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Botón rápido agregar abajo de cada categoría */}
-                      {catItems.length > 0 && (
-                        <div className="px-6 py-3 border-t bg-white/2" style={{ borderColor: 'var(--border)' }}>
-                          <button
-                            onClick={() => { setEditItem({ categoryId: cat.id }); setFormType('item'); }}
-                            className="flex items-center gap-2 text-sm font-semibold transition-colors hover:text-white"
-                            style={{ color: 'var(--accent)' }}
-                          >
-                            <Plus size={16} /> Agregar nuevo platillo a {cat.name}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )
+
+                            {/* Precio */}
+                            <span style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--accent)', flexShrink: 0 }}>
+                              ${item.price.toFixed(2)}
+                            </span>
+
+                            {/* Acciones */}
+                            <div
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '4px',
+                                paddingLeft: '16px', marginLeft: '8px',
+                                borderLeft: '1px solid var(--border)',
+                              }}
+                            >
+                              {/* Toggle disponibilidad */}
+                              <button
+                                onClick={() => toggleAvailable(item)}
+                                title={item.available ? 'Marcar Agotado' : 'Marcar Disponible'}
+                                style={{ minWidth: '40px', minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                                className="hover:bg-white/5"
+                              >
+                                {item.available
+                                  ? <ToggleRight size={24} color="var(--accent)" />
+                                  : <ToggleLeft  size={24} color="var(--text-secondary)" />}
+                              </button>
+
+                              {/* Editar platillo */}
+                              <button
+                                onClick={() => openEditItem(item)}
+                                title="Editar Platillo"
+                                style={{ minWidth: '40px', minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                                className="hover:bg-white/10"
+                              >
+                                <Pencil size={17} color="var(--text-secondary)" />
+                              </button>
+
+                              {/* Eliminar platillo */}
+                              <button
+                                onClick={() => deleteItem(item)}
+                                title="Eliminar Platillo"
+                                style={{ minWidth: '40px', minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                                className="hover:bg-red-500/10"
+                              >
+                                <Trash2 size={17} color="#ef4444" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Botón rápido agregar al fondo */}
+                    {catItems.length > 0 && (
+                      <div
+                        style={{
+                          borderTop: '1px solid var(--border)',
+                          padding: '14px 28px',
+                          background: 'rgba(255,255,255,0.01)',
+                        }}
+                      >
+                        <button
+                          onClick={() => openNewItem(cat.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            fontSize: '0.875rem', fontWeight: 700,
+                            color: 'var(--accent)', background: 'none', border: 'none',
+                            cursor: 'pointer', transition: 'color 0.15s',
+                          }}
+                          className="hover:text-white"
+                        >
+                          <Plus size={17} /> Agregar nuevo platillo a {cat.name}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Modales (Portal) ────────────────────────────────────────────── */}
+      {showCatModal && (
+        <CategoryModal
+          initial={editCat}
+          onSave={closeCatModal}
+          onClose={closeCatModal}
+        />
+      )}
+      {showItemModal && (
+        <ItemModal
+          initial={editItem}
+          categories={categories}
+          onSave={closeItemModal}
+          onClose={closeItemModal}
+        />
       )}
     </div>
   );

@@ -2,114 +2,200 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Modal detallado para visualizar un corte de caja pasado.
 // ─────────────────────────────────────────────────────────────────────────────
-import React from 'react';
-import { 
-  Calendar, User, Scissors, TrendingUp, TrendingDown, 
-  Wallet, CheckCircle, ArrowLeft, Hash 
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  Calendar, User, Scissors, TrendingUp, TrendingDown,
+  Wallet, ArrowLeft, X
 } from 'lucide-react';
-import Modal from '../../components/ui/Modal.jsx';
 
 export default function ShiftDetailModal({ isOpen, onClose, shift }) {
-  if (!shift) return null;
+  // Cerrar con Escape y bloquear scroll del body
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => { 
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = ''; 
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !shift) return null;
 
   const fmt = (n) => `$${(n || 0).toFixed(2)}`;
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Detalle de Corte"
-      maxWidth="max-w-2xl"
-      showClose={false}
+  return createPortal(
+    /* ── Overlay ── */
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+        animation: 'fadeIn 0.2s ease',
+        overflowY: 'auto',
+      }}
     >
-      <div className="flex flex-col animate-fadeIn p-6 lg:p-10">
-        
-        {/* ── HEADER CARDS ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-           <div className="p-5 rounded-[24px] bg-white/5 border border-white/5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
-              <Calendar size={22} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 mb-0.5">Fecha del Corte</p>
-              <p className="text-lg font-black text-white">{shift.date}</p>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-[24px] bg-white/5 border border-white/5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner">
-              <Wallet size={22} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 mb-0.5">Efectivo en Cajón</p>
-              <p className="text-lg font-black text-emerald-500">{fmt(shift.cashInDrawer)}</p>
-            </div>
-          </div>
+      {/* ── Panel ── */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '28px',
+          padding: '36px',
+          width: '100%',
+          maxWidth: '640px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+          animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1)',
+          margin: 'auto',
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Scissors size={20} color="var(--accent)" />
+            Detalle de Corte
+          </h2>
+          <button
+            onClick={onClose}
+            className="btn-ghost"
+            style={{ borderRadius: '12px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title="Cerrar"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {/* ── DESGLOSE FINANCIERO ───────────────────────────────────────── */}
-        <div className="space-y-4 mb-8">
-          <div className="pos-card p-6 border-l-4 border-l-amber-500 bg-white/[0.02]">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 mb-4 flex items-center gap-2">
-              <TrendingUp size={14} className="text-amber-500" /> Resumen de Ingresos
+        {/* Contenido principal */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Fecha y Efectivo en Cajón */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{
+              display: 'flex', gap: '12px', alignItems: 'center',
+              padding: '16px', borderRadius: '12px',
+              background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div style={{ color: 'var(--accent)', display: 'flex' }}>
+                <Calendar size={24} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                  Fecha del Corte
+                </label>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {shift.date}
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex', gap: '12px', alignItems: 'center',
+              padding: '16px', borderRadius: '12px',
+              background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div style={{ color: '#10b981', display: 'flex' }}>
+                <Wallet size={24} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                  Efectivo en Cajón
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10b981' }}>
+                  {fmt(shift.cashInDrawer)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Resumen de Ingresos */}
+          <div style={{ paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <TrendingUp size={16} color="var(--accent)" />
+              Resumen de Ingresos
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
               <div>
-                <p className="text-[10px] font-bold text-white/20 uppercase mb-1">Total Ventas</p>
-                <p className="font-black text-xl text-white">{fmt(shift.totalSales)}</p>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Total Ventas
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {fmt(shift.totalSales)}
+                </div>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-white/20 uppercase mb-1">Efectivo</p>
-                <p className="font-black text-xl text-emerald-500">{fmt(shift.cashSales)}</p>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Efectivo
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981' }}>
+                  {fmt(shift.cashSales)}
+                </div>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-white/20 uppercase mb-1">Tarjeta</p>
-                <p className="font-black text-xl text-blue-500">{fmt(shift.cardSales)}</p>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Tarjeta
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#3b82f6' }}>
+                  {fmt(shift.cardSales)}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="pos-card p-6 border-l-4 border-l-red-500 bg-white/[0.02]">
-             <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 mb-4 flex items-center gap-2">
-              <TrendingDown size={14} className="text-red-500" /> Egresos y Salidas
+          {/* Egresos y Salidas */}
+          <div style={{ paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <TrendingDown size={16} color="#ef4444" />
+              Egresos y Salidas
             </h3>
-            <div className="flex justify-between items-center">
-               <div>
-                <p className="text-[10px] font-bold text-white/20 uppercase mb-1">Total Egresos</p>
-                <p className="font-black text-xl text-red-500">-{fmt(shift.totalExpenses)}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Total Egresos
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ef4444' }}>
+                  -{fmt(shift.totalExpenses)}
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-white/20 uppercase mb-1">Órdenes Procesadas</p>
-                <p className="font-black text-xl text-white">{shift.orderCount || 0} cuentas</p>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Órdenes Procesadas
+                </label>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {shift.orderCount || 0} cuentas
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Meta Info */}
+          <div style={{ paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ 
+              display: 'flex', flexDirection: 'column', gap: '12px',
+              padding: '16px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Realizado por</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <User size={14} color="var(--accent)" /> {shift.closedByName}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>ID del Sistema</span>
+                <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>#{shift.id?.toUpperCase()}</span>
+              </div>
+            </div>
+          </div>
+
         </div>
-
-        {/* ── META INFO ────────────────────────────────────────────────── */}
-        <div className="p-5 rounded-[24px] bg-black/20 border border-white/5 space-y-3 mb-10">
-           <div className="flex justify-between text-xs font-bold">
-             <span className="text-white/30 uppercase tracking-widest">Realizado por</span>
-             <span className="text-white flex items-center gap-2">
-               <User size={14} className="text-amber-500" /> {shift.closedByName}
-             </span>
-           </div>
-           <div className="flex justify-between text-xs font-bold pt-3 border-t border-white/5">
-             <span className="text-white/30 uppercase tracking-widest">ID del Sistema</span>
-             <span className="text-white/60 font-mono">#{shift.id?.toUpperCase()}</span>
-           </div>
-        </div>
-
-        {/* ── ACTIONS ───────────────────────────────────────────────────── */}
-        <button
-          onClick={onClose}
-          className="w-full py-5 flex items-center justify-center gap-3 rounded-[22px] bg-white/5 border border-white/10 text-white font-black uppercase tracking-[0.3em] text-[11px] hover:bg-white/10 transition-all active:scale-95 shadow-lg"
-        >
-          <ArrowLeft size={18} />
-          Volver al Historial
-        </button>
-
       </div>
-    </Modal>
+    </div>,
+    document.body
   );
 }
